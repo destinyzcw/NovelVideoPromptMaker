@@ -1,0 +1,7 @@
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Generated prompt output (novel-specific, keep out of the skill repo)
+output/

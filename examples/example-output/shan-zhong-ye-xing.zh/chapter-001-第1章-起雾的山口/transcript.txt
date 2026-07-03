@@ -1,0 +1,9 @@
+# Transcript — Chapter 1: 第1章 起雾的山口
+# Reference/subtitle copy for review. LTX-2.3 reads the spoken lines
+# from inside each scene-NN.txt prompt, NOT from this file.
+
+## Scene 01 — 黄昏抵达山口 [7s clip, ~3.6s speech]
+  阿泽: 天黑前一定要过去，就差这一段了。
+
+## Scene 02 — 走进白雾 [6s clip, ~2.4s speech]
+  阿泽: 别停下，一直往前走。

@@ -1,0 +1,9 @@
+# Transcript — Chapter 2: 第二話 揺れる橋
+# Reference/subtitle copy for review. LTX-2.3 reads the spoken lines
+# from inside each scene-NN.txt prompt, NOT from this file.
+
+## Scene 01 — 朽ちた橋を試す [7s clip, ~2.2s speech]
+  ミラ: 持ちこたえて。お願い
+
+## Scene 02 — 板が折れる [8s clip, ~2.2s speech]
+  ミラ: あと少し。手を離すな

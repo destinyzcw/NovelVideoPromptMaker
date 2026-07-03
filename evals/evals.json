@@ -1,0 +1,41 @@
+{
+  "skill_name": "novel-to-ltx-video-prompts",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "I have a novel at examples/the-lantern-road.txt. Turn it into LTX-2.3 video prompts, one short clip per scene, and organize the output so I can map each clip back to the chapter it came from. Write everything under a new output/ folder.",
+      "expected_output": "Runs split_chapters.py, then for each of the 2 chapters reads the whole source.txt, plans a cast sheet + scene arc, writes all the chapter's LTX-2.3 prompts together via save_scenes.py (with a characters block and dialogue in most scenes), and runs validate.py with no errors. Each scene has a source_excerpt mapping back to the chapter, a single-paragraph prompt with audio cues and an embedded spoken line, and a negative prompt. A project characters.json is written and dialogue coverage is reported.",
+      "files": ["examples/the-lantern-road.txt"]
+    },
+    {
+      "id": 2,
+      "prompt": "Chapter 2 scene 1 of my Lantern Road project feels too static. Regenerate just that chapter's prompts with a more handheld, tense camera style and stronger river sound, keeping the scene-to-novel mapping intact.",
+      "expected_output": "Reads the existing chapter-002 scenes.json and source.txt, rewrites the prompts with handheld camera language and layered river/water audio, re-runs save_scenes.py for chapter 2 (stable indices), and re-validates. source_excerpts still map to the chapter.",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "Here's a plain story file with no chapter headings. Convert it into a handful of LTX video clips anyway and tell me which passage each clip corresponds to.",
+      "expected_output": "Handles the marker-less case (whole file becomes one chapter), segments into a reasonable number of scenes, and reports the source_excerpt for each clip so the user can see the passage-to-clip mapping.",
+      "files": ["examples/the-lantern-road.txt"]
+    },
+    {
+      "id": 4,
+      "prompt": "Turn my Chinese novel examples/shan-zhong-ye-xing.zh.txt into LTX-2.3 video prompts, one clip per scene, organized so each clip maps back to its 章. It uses 第1章 / 第2章 headings.",
+      "expected_output": "split_chapters.py correctly detects the two 第N章 chapters. Prompts are written in Chinese (matching the source novel), with dialogue in Chinese quotes embedded in the prompt, a project characters.json cast sheet, and each source_excerpt in Chinese mapping back to the chapter. Most/all scenes have a spoken line (dialogue coverage reported). validate.py passes.",
+      "files": ["examples/shan-zhong-ye-xing.zh.txt"]
+    },
+    {
+      "id": 5,
+      "prompt": "把 examples/hai-bian-de-xin.zh.txt 这部小说做成 LTX-2.3 的分镜提示词，每个镜头一个片段，并且要能对应回原文的章节（章节是「第一章」「第二章」这种汉字数字）。",
+      "expected_output": "Chapter regex matches kanji-numeral headings 第一章/第二章. Chinese-language cinematic prompts with the mandatory audio layer, Chinese dialogue in quotes, a characters.json cast sheet, and Chinese source_excerpts that map back. High dialogue coverage. validate.py passes with no errors.",
+      "files": ["examples/hai-bian-de-xin.zh.txt"]
+    },
+    {
+      "id": 6,
+      "prompt": "examples/yuki-no-eki.ja.txt を LTX-2.3 の動画プロンプトに変換してください。シーンごとに1クリップで、各クリップが元の話（第一話・第二話）に対応するように整理してください。",
+      "expected_output": "split_chapters.py detects the Japanese 第一話/第二話 episode markers. Prompts written in Japanese (matching the source), with Japanese dialogue preserved in quotes, a characters.json cast sheet, and source_excerpts in Japanese mapping back to each episode. High dialogue coverage. validate.py passes.",
+      "files": ["examples/yuki-no-eki.ja.txt"]
+    }
+  ]
+}

@@ -1,0 +1,30 @@
+{
+  "novel": "shan-zhong-ye-xing.zh",
+  "source_file": "D:\\Sources\\NovelVideoPromptMaker\\examples\\shan-zhong-ye-xing.zh.txt",
+  "created": "2026-07-03T16:09:48",
+  "recommended_params": {
+    "sampling_steps": 24,
+    "cfg_scale": 6.5,
+    "fps": 25,
+    "resolution": "720p"
+  },
+  "chapter_count": 2,
+  "chapters": [
+    {
+      "number": 1,
+      "title": "第1章 起雾的山口",
+      "dir": "chapter-001-第1章-起雾的山口",
+      "word_count": 177,
+      "scene_count": 2,
+      "status": "generated"
+    },
+    {
+      "number": 2,
+      "title": "第2章 断桥",
+      "dir": "chapter-002-第2章-断桥",
+      "word_count": 238,
+      "scene_count": 2,
+      "status": "generated"
+    }
+  ]
+}

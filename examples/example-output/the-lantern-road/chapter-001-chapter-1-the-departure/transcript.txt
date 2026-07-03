@@ -1,0 +1,9 @@
+# Transcript — Chapter 1: Chapter 1: The Departure
+# Reference/subtitle copy for review. LTX-2.3 reads the spoken lines
+# from inside each scene-NN.txt prompt, NOT from this file.
+
+## Scene 01 — Leaving the cottage at dawn [6s clip, ~2.4s speech]
+  Mira: Goodbye. I'll come back for you.
+
+## Scene 02 — A vow at the wheat fields [6s clip, ~2.8s speech]
+  Mira: I will come back. I swear it.

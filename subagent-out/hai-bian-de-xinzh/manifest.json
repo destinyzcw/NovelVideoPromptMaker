@@ -1,0 +1,30 @@
+{
+  "novel": "hai-bian-de-xin.zh",
+  "source_file": "D:\\Sources\\NovelVideoPromptMaker\\examples\\hai-bian-de-xin.zh.txt",
+  "created": "2026-07-03T16:21:28",
+  "recommended_params": {
+    "sampling_steps": 24,
+    "cfg_scale": 6.5,
+    "fps": 25,
+    "resolution": "720p"
+  },
+  "chapter_count": 2,
+  "chapters": [
+    {
+      "number": 1,
+      "title": "第一章 退潮",
+      "dir": "chapter-001-第一章-退潮",
+      "word_count": 171,
+      "scene_count": null,
+      "status": "pending"
+    },
+    {
+      "number": 2,
+      "title": "第二章 灯塔",
+      "dir": "chapter-002-第二章-灯塔",
+      "word_count": 212,
+      "scene_count": null,
+      "status": "pending"
+    }
+  ]
+}
