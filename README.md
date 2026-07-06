@@ -16,6 +16,7 @@ SKILL.md                       # the agent's instructions (start here)
 references/
   ltx2-prompt-guide.md         # distilled LTX-2.3 prompt-writing rulebook (+ verbatim ltx.io golden rules)
   ltx2-official-examples.md    # all 11 verbatim ltx.io example prompts + derived authoring checklist
+  ltx2-usage-notes.md          # deep-research findings: model facts, prompt rules, failure fixes, CJK caveat
 scripts/
   split_chapters.py            # novel.txt -> per-chapter folders + manifest
   save_scenes.py               # persist a chapter's scenes as paste-ready prompt files

@@ -19,10 +19,13 @@ DEFAULT_CHAPTER_REGEX = (
 )
 
 RECOMMENDED_PARAMS = {
-    "sampling_steps": 24,
-    "cfg_scale": 6.5,
-    "fps": 25,
+    "sampling_steps": 30,
+    "video_cfg": 3.0,
+    "audio_cfg": 7.0,
+    "fps": 24,
+    "frames": 121,
     "resolution": "720p",
+    "note": "LTX-2.3 full/dev defaults; distilled model uses ~12 steps at cfg 1.0 (no negative). Frame count must be 8k+1; dims multiple of 32/64.",
 }
 
 MAX_PROMPT_WORDS = 200

@@ -14,7 +14,7 @@ checklist at the end is your gate before saving any scene.
 # Part 1 — Golden rules
 
 - **One clip = one prompt = one continuous shot.** LTX-2.3 renders a single short shot
-  (typically 3–10 s at 25 FPS). Never pack a whole plot into one prompt.
+  (typically ~5 s / 121 frames at 24 fps). Never pack a whole plot into one prompt.
 - **One flowing paragraph, present tense, 4–8 sentences, under 200 words.** A cohesive
   scene the model reads start-to-finish — not a bullet list, not a filled-in checklist.
 - **Imagine the shot, then describe what you see — don't transcribe the prose.** Picture
@@ -346,13 +346,33 @@ localized negatives per language.
 
 # Part 7 — Recommended generation parameters (for metadata reference)
 
+These are the LTX-2.3 defaults from the model authors' code/docs (`Lightricks/LTX-2`
+`constants.py`, `docs.ltx.video`). The skill only writes prompts, but record accurate
+params in metadata so a human regenerating a clip has correct starting values.
+
+| Parameter | Full / dev model | HQ two-stage | Distilled model |
+| --- | --- | --- | --- |
+| Sampling steps | **30** | 15 | 8 (+4 stage-2) |
+| Video CFG (`cfg_scale`) | **3.0** | 3.0 | **1.0** (CFG off) |
+| Audio CFG | **7.0** | 7.0 | 1.0 |
+| Modality scale (A/V sync) | 3.0 | 3.0 | — |
+| Negative prompt | used | used | **ignored** (CFG=1) |
+
+**Video geometry (all variants):**
+
 | Parameter | Value |
 | --- | --- |
-| Sampling steps | 20–25+ |
-| CFG scale | 6–7 |
-| Clip duration | 3–10 s (min 3–4 s so audio can develop) |
-| Resolution | 720p+ |
-| FPS | 25 |
+| Default output | **121 frames @ 24 fps ≈ 5 s** (ComfyUI template: 1280×720, 25 fps) |
+| Frame-count rule | **must be 8·k + 1** (…, 25, 33, 41, 97, 121, 241) |
+| Dimension rule | multiples of **32** (one-stage) / **64** (two-stage) |
+| Clip duration | 5 s default; up to ~10 s locally, up to 20 s via API (1080p, fast) |
+| Resolution | best under 720p locally; up to native 4K / 50 fps on data-center GPUs |
+| Audio | joint single-pass, stereo, generated even if unprompted |
+
+> **Match prompt density to duration.** LTX-2.3's authors note that a short prompt on a
+> long clip makes the model "rush through the described action," and that longer, more
+> descriptive prompts consistently outperform short ones on 2.3. For an ~5 s clip, 4–8
+> sentences is right; for 8–10 s, add proportionally more concrete beats.
 
 ---
 

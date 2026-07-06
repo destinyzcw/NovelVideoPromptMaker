@@ -30,8 +30,11 @@ layout, and validating it. Don't reimplement the scripts by hand.
    what makes an LTX-2.3 prompt good (single chronological paragraph, element ordering,
    the mandatory audio layer, negative prompts, failure modes). Every prompt you write
    must follow it.
+   - For the *why* behind these rules plus accurate model facts, failure-mode fixes, and
+     the CJK lip-sync caveat, consult `references/ltx2-usage-notes.md` (deep-research
+     findings from Lightricks' own docs/system-prompts and field-tested community sources).
 2. Confirm the input with the user if unclear: the path to the novel `.txt`, where to
-   write output, and roughly how long each clip should be (default ~6 s).
+   write output, and roughly how long each clip should be (default ~5 s / 121 frames).
 
 ## Workflow
 
@@ -58,11 +61,14 @@ the same character looks the same in every shot, the setting stays coherent, and
 scene order reads as one continuous sequence. Produce two things from this read:
 
 **(a) A cast sheet.** List the characters who appear, each with a *fixed, concrete visual
-description* you will reuse verbatim in every scene they're in — age, build, hair, clothing,
-distinguishing details (`Mira — woman in her 20s, dark hair tied back, patched red wool
-cloak, heavy canvas pack, dented brass lantern`). Locking these down once is what prevents
-a character's face or outfit from drifting between clips. You pass this to the writer as a
-`characters` array, and it is remembered project-wide so later chapters stay consistent too.
+description* — age, build, hair, clothing, distinguishing details (`Mira — woman in her
+20s, dark hair tied back, patched red wool cloak, heavy canvas pack, dented brass lantern`).
+Locking these down once is what prevents a character's face or outfit from drifting between
+clips. You pass this to the writer as a `characters` array, and it is remembered
+project-wide (`characters.json`) so later chapters stay consistent too. **Each scene is
+generated as a separate clip and the model has no memory across clips**, so this look must
+be re-stated in every prompt the character appears in — the cast sheet is what keeps those
+restatements identical (see the reuse rule in Step 3).
 
 **(b) A scene breakdown.** Segment the chapter into scenes. A **scene = one LTX-2.3 clip =
 one continuous, filmable action** (roughly 3–10 seconds). Judgment matters more than any
@@ -87,8 +93,11 @@ novel, so keep it faithful — copy real phrasing from `source.txt`, don't inven
 
 ### Step 3 — Write the LTX-2.3 prompt for each scene
 
-Now write the prompts for the whole chapter as a set, pulling character descriptions from
-your cast sheet so they read identically across clips. Following
+Now write the prompts for the whole chapter as a set. Because each scene is rendered as an
+independent clip, **restate each character's fixed visual look in every prompt they appear
+in** so the model reproduces the same person — draw it from your cast sheet and keep the
+anchors identical, but weave them into the action as natural prose rather than a robotic
+comma-list (see the reuse rule below). Following
 `references/ltx2-prompt-guide.md`, each prompt is a single chronological paragraph
 (4–8 sentences, under 200 words) ordering elements as: main action → gestures →
 appearance → environment → camera → lighting/color → scene shift → audio & dialogue.
@@ -135,12 +144,33 @@ LTX-2 team's own camera guidance (see the "Camera language" section of the guide
   conflicting sources unless the scene clearly justifies it.
 - **Avoid chaotic/non-linear physics** (jumping, juggling, fast twisting) that glitches;
   prefer smooth, motivated motion.
+- **Use restrained, concrete language.** LTX-2.3's own prompt enhancer strips empty
+  intensifiers — prefer `red dress` over `vibrant red`, `soft side-light` over `blinding
+  glow`. Named appearance and motion carry the shot; adjectives like *epic/dynamic/
+  stunning* do not. (A single light style cue at the open is fine; don't pile them up.)
+- **Visual and audio only — no smell, taste, or touch.** Render "cold" as breath fogging
+  or a shiver, not "the icy air stings her skin".
+- **Block the scene spatially.** State left/right, foreground/background, facing, and
+  distance between subjects so the model has a stage, not just a description.
+- **Match prompt density to duration.** A short prompt on a long clip makes the model
+  rush; scale the number of concrete beats to the clip length (4–8 sentences for ~5 s).
+- **Motivate every camera move; don't stack contradictory cues** (no "handheld + smooth
+  gimbal"). Plain "static camera" text is unreliable — if you need a locked frame, write
+  "tripod locked, no camera movement".
+- **CJK dialogue caveat.** Native-language speech is correct, but lip-sync is only
+  validated for EN/FR/ES/DE/RU. For Chinese/Japanese talking beats keep lines short and
+  favor close-up framing so delivery reads clearly.
 
 Every prompt must include 3–5 layered sound cues (ambient + action + accent) because
 LTX-2.3 generates audio in the same pass, but **weave the sounds into the sentences or a
 `[sound, sound, sound]` bracket group — never a literal `Audio:` / `音效：` label, and
-never leak layer names like "as accent" into the prompt.** Convert stated emotions into
-visible cues. Keep on-screen text, logos, and frantic motion out.
+never leak layer names like "as accent" into the prompt.** LTX's own guidance is to spread
+the soundscape *through* the action and align its intensity with the tempo, so prefer
+threading key sounds next to the beats they accompany rather than dumping them all at the
+very end. In dialogue-heavy scenes that could attract stray music (cafés, parties), anchor
+the acoustic explicitly — "close-mic speech, quiet room tone, no background music" — since
+negative prompts don't reliably remove it. Convert stated emotions into visible cues. Keep
+on-screen text, logos, and frantic motion out.
 
 **Spoken dialogue — aim for a line in every scene you can.** Videos are far more alive
 when characters speak, so treat dialogue as the default, not the exception: **give every
@@ -170,10 +200,20 @@ clip, and — as a safety net — to auto-weave any line you forgot to embed. It
 **dialogue coverage** (how many scenes have a spoken line); aim to keep that high. The
 `transcript.txt` it produces is a reference/subtitle copy for review, **not** model input.
 
-Maintain **continuity across clips** using your cast sheet: paste each character's fixed
-description into every scene they appear in, so their face, build, and clothing stay
-identical from shot to shot. The writer also stores the cast in a project-wide
-`characters.json`, so reuse the same names and descriptions in later chapters.
+Maintain **continuity across clips**. Each clip is generated independently and the model
+does **not** carry a character's appearance from one clip to the next, so their key visual
+look must be restated in **every** prompt they appear in — otherwise face, build, and
+clothing drift from shot to shot. Keep those restatements identical by pulling from your
+cast sheet. The thing to avoid is not the repetition itself but its *robotic form*: don't
+paste the full comma-separated cast-sheet block verbatim as an appositive after the name in
+every scene (`阿泽，二十多岁、瘦高、短黑发、粗布深衣、草绳束腰、背竹篓、提旧马灯，走向…`).
+Instead **weave the same load-bearing anchors into the action as natural prose**, and you
+may vary the surface wording and foreground different traits shot to shot as long as the
+anchors (age/build, hair, signature garment, signature prop) stay consistent — e.g. one
+shot "二十多岁的阿泽瘦高短发，穿粗布深衣提着旧马灯，走向…", the next "阿泽把旧马灯举到
+脸边，深衣被风掀起…". Include the visually load-bearing, on-screen traits; drop only details
+that never show. The canonical full description lives in `characters.json` for the human and
+for regeneration. Reuse the same names and looks in later chapters.
 
 **Match the novel's language.** Write the whole scene prompt in the **same language as
 the source novel** — a Chinese novel gets Chinese prompts, a Japanese novel gets Japanese

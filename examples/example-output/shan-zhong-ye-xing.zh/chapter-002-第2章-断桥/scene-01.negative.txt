@@ -1,1 +1,1 @@
-画面文字, 字幕, 变形的手, 多余的人, 白天, 平静水面
+text overlay, subtitles, watermark, warped hands, extra fingers, static frozen frame, blurry

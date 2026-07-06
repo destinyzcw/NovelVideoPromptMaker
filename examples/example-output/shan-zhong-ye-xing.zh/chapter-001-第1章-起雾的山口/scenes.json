@@ -4,26 +4,26 @@
   "characters": [
     {
       "name": "阿泽",
-      "description": "二十多岁的精瘦青年，穿粗布棉袄，背着装满柴火的竹篓，竹篓上挂着一盏旧铜马灯"
+      "description": "二十多岁、瘦高、短黑发、粗布深衣、草绳束腰、背竹篓、提旧马灯"
     }
   ],
   "scene_count": 2,
   "scenes": [
     {
       "index": 1,
-      "title": "黄昏抵达山口",
-      "source_excerpt": "天快黑的时候，阿泽背着竹篓走到了山口。雾从谷底一点点爬上来，把脚下的石阶一级一级吞没。他停下脚步，回头望了一眼来时的路，村子的灯火早已看不见了。",
-      "prompt": "电影感镜头跟在精瘦青年身后，随他登上垭口的最后几级石阶，背上柴火竹篓一起一伏。他停下脚步，镜头缓缓推近他的侧脸——他二十多岁，穿粗布棉袄，竹篓上挂着一盏旧铜马灯，回头望向来时的山路，肩膀因疲惫佝偻。镜头越过肩，望见白雾从谷底涌上，把石阶一级级吞没，村子灯火早已不见。他转向镜头，压低声音说：“天黑前一定要过去，就差这一段了。”冷蓝暮色里马灯投出一圈暖黄光晕，【山风呜咽，竹篓里柴火碰撞，远处一声乌鸦啼叫】。",
-      "negative_prompt": "画面文字, 字幕, 变形的手, 多余的人, 强烈阳光, 静止画面",
-      "suggested_duration_seconds": 7,
+      "title": "雾吞山口",
+      "source_excerpt": "天快黑的时候，阿泽背着竹篓走到了山口。雾从谷底一点点爬上来，白得像化不开的浓浆，\n把脚下的石阶一级一级吞没。他停下脚步，回头望了一眼来时的路，村子的灯火早已看不见了。",
+      "prompt": "山中惊悚片宽镜中，二十多岁的阿泽瘦高短发，穿粗布深衣、草绳束腰，背着竹篓提旧马灯，从画面右前方走到山口左侧石阶。雾从背景谷底升起，吞过前景石阶；镜头先低位跟住他的靴子，再随他停步推到侧脸近景。他回头望向右后方空路，嘴唇微动，低声说：“看不见村灯了。”镜头顺他的视线拉远到白雾填满画面，只留他在左前景暗影里，暮光昏黄一致，【山风掠过石阶、竹篓柴枝干响、远处鸟叫断掉、他的短促呼吸】。",
+      "negative_prompt": "text overlay, subtitles, watermark, warped hands, extra fingers, static frozen frame, blurry",
+      "suggested_duration_seconds": 6,
       "dialogue": [
         {
           "speaker": "阿泽",
-          "line": "天黑前一定要过去，就差这一段了。"
+          "line": "看不见村灯了。"
         }
       ],
-      "estimated_speech_seconds": 3.6,
-      "prompt_word_count": 198,
+      "estimated_speech_seconds": 1.6,
+      "prompt_word_count": 186,
       "files": {
         "prompt": "scene-01.txt",
         "negative": "scene-01.negative.txt"
@@ -31,19 +31,19 @@
     },
     {
       "index": 2,
-      "title": "走进白雾",
-      "source_excerpt": "风从背后推着他，他握紧了手里的旧马灯，然后迈步走进白雾，山路在雾里越来越窄，前方只剩下一小圈昏黄的灯光。",
-      "prompt": "镜头跟在精瘦青年身后缓缓向前推移，看他握紧旧铜马灯迈进浓浓的白雾，身后的风把粗布棉袄吹得猎猎作响。镜头与他保持一段距离，任他的身影在雾中渐渐化成剪影，狭窄的山路在画面里越收越窄，前方只剩一小圈昏黄灯光。他半侧向镜头，咬牙低声给自己打气：“别停下，一直往前走。”近乎单色的冷灰调里，马灯是画面中唯一的暖色，【阵风忽起忽落，草鞋踩在湿石阶上碎响，铜马灯摇晃时发出金属吱呀声】。",
-      "negative_prompt": "画面文字, 字幕, 变形的手, 多余的人, 晴朗天空",
+      "title": "马灯入雾",
+      "source_excerpt": "风从背后推着他，竹篓里的柴火发出干涩的响声。他握紧了手里的旧马灯，指节因为用力而发白，\n低声对自己说了一句：“天黑前一定要过去。”然后迈步走进白雾，山路在雾里越来越窄，\n前方只剩下一小圈昏黄的灯光。",
+      "prompt": "旧马灯先在近景里摇晃，二十多岁的阿泽瘦高短发，粗布深衣被风掀起，草绳束腰，背着竹篓站在画面中央面向前方窄路。镜头从他发白的指节插入，随他抬灯推到嘴边近景；他压低声音说：“天黑前一定要过去。”风从右后方推动衣摆，镜头改为贴身跟拍，看他迈进左前方白雾。最后镜头停在他背后中景，昏黄灯圈被雾压小，【风声贴近耳边、柴火摩擦、石阶脚步、马灯金属轻碰】。",
+      "negative_prompt": "text overlay, subtitles, watermark, warped hands, extra fingers, static frozen frame, blurry",
       "suggested_duration_seconds": 6,
       "dialogue": [
         {
           "speaker": "阿泽",
-          "line": "别停下，一直往前走。"
+          "line": "天黑前一定要过去。"
         }
       ],
-      "estimated_speech_seconds": 2.4,
-      "prompt_word_count": 182,
+      "estimated_speech_seconds": 2.0,
+      "prompt_word_count": 167,
       "files": {
         "prompt": "scene-02.txt",
         "negative": "scene-02.negative.txt"

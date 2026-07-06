@@ -1,12 +1,15 @@
 {
   "novel": "shan-zhong-ye-xing.zh",
   "source_file": "D:\\Sources\\NovelVideoPromptMaker\\examples\\shan-zhong-ye-xing.zh.txt",
-  "created": "2026-07-03T16:09:48",
+  "created": "2026-07-06T10:06:32",
   "recommended_params": {
-    "sampling_steps": 24,
-    "cfg_scale": 6.5,
-    "fps": 25,
-    "resolution": "720p"
+    "sampling_steps": 30,
+    "video_cfg": 3.0,
+    "audio_cfg": 7.0,
+    "fps": 24,
+    "frames": 121,
+    "resolution": "720p",
+    "note": "LTX-2.3 full/dev defaults; distilled model uses ~12 steps at cfg 1.0 (no negative). Frame count must be 8k+1; dims multiple of 32/64."
   },
   "chapter_count": 2,
   "chapters": [

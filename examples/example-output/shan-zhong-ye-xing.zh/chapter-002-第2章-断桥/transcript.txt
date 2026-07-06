@@ -2,8 +2,8 @@
 # Reference/subtitle copy for review. LTX-2.3 reads the spoken lines
 # from inside each scene-NN.txt prompt, NOT from this file.
 
-## Scene 01 — 试探断桥 [7s clip, ~2.0s speech]
-  阿泽: 撑住，千万别断。
+## Scene 01 — 试探断桥 [6s clip, ~1.2s speech]
+  阿泽: 还能撑住。
 
-## Scene 02 — 木板断裂 [8s clip, ~2.2s speech]
-  阿泽: 就差一步，别松手。
+## Scene 02 — 踏上对岸 [6s clip, ~2.0s speech]
+  阿泽: 再一步，就过去。
