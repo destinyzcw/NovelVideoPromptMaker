@@ -107,9 +107,25 @@ behind." Scene **direction**, not vague description.
 
 ### 2.7 Audio woven through the action, aligned to tempo [official]
 "Describe the complete soundscape throughout the prompt alongside the actions — NOT at the
-end. Align audio intensity with action tempo." Our `[…]` / `【…】` bracket group is an
-accepted LTX format, but prefer also threading key sounds next to the beats they accompany
-so audio rises and falls with the action. Never an `Audio:` label; never layer names.
+end. Align audio intensity with action tempo." Thread each sound into the sentence for the
+beat it accompanies. **A trailing catch-all bracket group at the very end of the prompt is a
+confirmed failure mode** — the model largely ignores it, so ambient audio parked in a final
+`[…]` / `【…】` (e.g. a closing `【山风…、脚步、鸦啼、呼吸】`) never reaches the video (observed
+in the field on LTX-2.3). A short inline bracket group *beside its own beat* mid-paragraph is
+fine; the anti-pattern is collecting the whole soundscape at the end. Never an `Audio:` label;
+never layer names.
+
+### 2.7b Character consistency: verbatim anchors + DrawThings I2V carry [official + community]
+Two reliable levers hold a character's look across independent clips. (1) **Restate the
+canonical appearance verbatim** — reuse the exact cast-sheet anchor phrases (same words, same
+order) in every T2V prompt the character appears in; paraphrasing or thinning the description
+(e.g. "the same young man" with the hair/clothing dropped) leaves those traits for the model
+to re-invent, and hair/build/clothing drift shot to shot (a confirmed field failure). (2)
+**Chain continuous runs image-to-video**: DrawThings can start a clip from the previous
+clip's *last frame* natively (its "use last frame" I2V), inheriting the look pixel-for-pixel
+— on those carried clips the text anchors can be light. Note DrawThings supports T2V and I2V
+only; First-Frame-Last-Frame (FFLF) and S2V are not exposed there, so the skill relies on the
+last-frame I2V carry-over rather than extracting frames itself.
 
 ### 2.8 Dialogue: segment long lines with acting directions between them [official — 2.3]
 For speaking characters, break a long line into short phrases separated by acting/delivery

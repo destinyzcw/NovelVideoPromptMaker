@@ -1,0 +1,52 @@
+{
+  "chapter_number": 1,
+  "chapter_title": "Chapter 1: The Departure",
+  "word_count": 129,
+  "source_text": "Mira laced her boots in the grey light before dawn and stepped out of the cottage.\r\nThe village was silent, chimneys cold, the dirt road pale under a sky the color of ash.\r\nShe shouldered her pack, heavy with bread and a single brass lantern, and did not look\r\nback at the door she might never open again.\r\n\r\nAt the edge of the wheat fields she paused. A wind moved through the stalks, bending\r\nthem all one way, and somewhere a lone crow called. Her hands were steady though her\r\nheart was not. \"I will come back,\" she said to no one, and the words fell flat in the\r\nempty air. Then she walked on, into the treeline where the road narrowed and the\r\nmorning had not yet reached.",
+  "status": "generated",
+  "characters": [
+    {
+      "name": "Mira",
+      "description": "woman in her twenties, dark hair tied back, patched red wool cloak, heavy canvas pack, dented brass lantern hanging from the pack"
+    }
+  ],
+  "scene_count": 2,
+  "scenes": [
+    {
+      "index": 1,
+      "title": "Leaving the cottage at dawn",
+      "source_excerpt": "Mira laced her boots in the grey light before dawn and stepped out of the cottage. She shouldered her pack, heavy with bread and a single brass lantern, and did not look back at the door she might never open again.",
+      "prompt": "A cinematic dawn shot opens tight on a woman in her twenties, dark hair tied back, patched red wool cloak, heavy canvas pack, dented brass lantern hanging from the pack as her hands cinch worn leather boot-laces; her boots creak on the frost when she stands. The camera cranes up with her and eases back as she steps through the low cottage doorway into a thin wind moaning over empty rooftops. She hitches the pack higher, the lantern swaying, and the lens pushes in as she pauses on the threshold with one hand on the door frame. A lone dog barks far off just before she turns to camera and says, barely a whisper, \"Goodbye. I'll come back for you.\" Shuttered stone cottages recede down an ash-grey pre-dawn lane in flat cool-blue twilight with no hard shadow, and the shot ends on her face filling the frame.",
+      "negative_prompt": "text overlay, subtitles, watermark, warped hands, extra fingers, bright daylight, harsh shadows, modern buildings",
+      "suggested_duration_seconds": 6,
+      "continuation": false,
+      "end_state": "",
+      "dialogue": [
+        {
+          "speaker": "Mira",
+          "line": "Goodbye. I'll come back for you."
+        }
+      ],
+      "estimated_speech_seconds": 2.4,
+      "prompt_word_count": 147
+    },
+    {
+      "index": 2,
+      "title": "A vow at the wheat fields",
+      "source_excerpt": "At the edge of the wheat fields she paused. A wind moved through the stalks, bending them all one way, and somewhere a lone crow called. \"I will come back,\" she said to no one, and the words fell flat in the empty air.",
+      "prompt": "A wide establishing shot holds a woman in her twenties, dark hair tied back, patched red wool cloak, heavy canvas pack, dented brass lantern hanging from the pack small at the edge of a vast wheat field, her back to the lens. Dry wheat hisses as a hard gust bends the stalks all one way, and the camera slowly pushes in while her cloak snaps and cracks across the frame. She turns toward camera, jaw set, the lantern swinging once at her hip as the lens keeps closing until her eyes fill a tight close-up. A single harsh crow caw cuts down from the pale ash sky as she says in a quiet, unwavering voice, \"I will come back. I swear it.\" Cool overcast dawn light leaves the palette muted gold and grey, and the shot holds on her still mouth after the words fall into the empty air.",
+      "negative_prompt": "text overlay, subtitles, watermark, warped hands, extra people, bright sunlight, lush green summer field, static frozen frame",
+      "suggested_duration_seconds": 6,
+      "continuation": false,
+      "end_state": "",
+      "dialogue": [
+        {
+          "speaker": "Mira",
+          "line": "I will come back. I swear it."
+        }
+      ],
+      "estimated_speech_seconds": 2.8,
+      "prompt_word_count": 149
+    }
+  ]
+}

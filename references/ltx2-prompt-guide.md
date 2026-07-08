@@ -28,7 +28,14 @@ checklist at the end is your gate before saving any scene.
   2–4 distinct moves within the single shot, each triggered by an action beat, ending on a
   defined framing (see Part 3). A prompt is **not** `<one camera label> + narrative`.
 - **LTX-2.3 generates video AND audio in one pass.** Every prompt must describe sound, or
-  the model invents generic filler.
+  the model invents generic filler. **Thread each sound next to the beat it accompanies —
+  never park the whole soundscape in a trailing bracket at the end** (the model largely
+  ignores a tacked-on final group, so that audio never reaches the video).
+- **A character's look holds only if you restate it verbatim.** LTX-2.3 has no memory across
+  clips, so reuse the exact cast-sheet anchor phrases (same words, same order) in every
+  prompt a character appears in; paraphrasing or dropping them makes hair/build/clothing
+  drift. For a clip carried from the previous clip's last frame (DrawThings I2V), the look
+  is inherited — restate lightly there.
 - **Show, don't tell.** Never write a bare internal-state label ("sad", "angry",
   "nervous"); render it as posture, gesture, and expression.
 - **Write the whole prompt in the source novel's language** (Chinese novel → Chinese
@@ -61,9 +68,11 @@ guidance for using each rule on novels.
 >   the language and accent you would like the character to have.
 
 **Apply:** Open with a cinematography term (vary it per scene). Pull character details
-from the cast sheet so they stay identical across clips. "Specify **when** the view should
-shift and **how**" is the mandate for camera chaining (Part 3): tie each move to a beat and
-name how the subject looks after it. Put dialogue in quotes, in the novel's language.
+from the cast sheet and restate them **verbatim** — same anchor words every clip — so they
+stay identical across shots; paraphrasing is what makes a look drift. "Specify **when** the
+view should shift and **how**" is the mandate for camera chaining (Part 3): tie each move to
+a beat and name how the subject looks after it. Put dialogue in quotes, in the novel's
+language.
 
 ## For Best Results
 
@@ -121,8 +130,8 @@ reflections). Keep lighting logic consistent within a shot (see What to Avoid).
 
 **Apply:** Every prompt needs layered sound (Part 4). Attribute dialogue delivery with these
 volume/style words (`barely a whisper`, `mutters`, `shouts over the wind`) so the spoken
-line lands with the right energy. Weave sound into prose or a bracket group — never an
-`Audio:` label.
+line lands with the right energy. Thread sound into the sentence for each beat — never an
+`Audio:` label and never a trailing catch-all bracket at the end (the model ignores it).
 
 ## Technical Style Markers
 
@@ -200,12 +209,15 @@ Arrange the paragraph roughly in this order for best adherence:
 
 1. **Main action** — the primary event, framed as what the camera catches.
 2. **Gestures & nuance** — specific physical movements, subtle character details.
-3. **Appearance** — subjects/objects in literal, concrete terms (from the cast sheet).
+3. **Appearance** — subjects/objects in literal, concrete terms, restated **verbatim** from
+   the cast sheet (identical anchor words each clip so the look doesn't drift).
 4. **Environment** — setting, background, atmosphere (dense fog, neon-lit alley).
 5. **Camera work — the spine of the shot** (chained; see below).
 6. **Lighting & color** — technical film terms (golden hour, cool blue moonlight).
 7. **Scene shifts** — any sudden change of action, weather, or time within the shot.
-8. **Audio & dialogue** — quoted lines + woven/bracketed sound (Part 4).
+8. **Audio & dialogue — woven through, never trailing** — thread each sound next to the
+   beat it accompanies and put quoted dialogue at its moment (Part 4); don't save the
+   soundscape for a bracket at the end.
 
 ## Vary your opening — don't fall into a formula
 
@@ -274,13 +286,18 @@ Rule of thumb: 1 ambient + 2 action + 1 accent. Sequence with timing words ("beg
 "suddenly…", "then fades to…") and control distance/volume with `distant, faint, muffled,
 crisp, booming, echoing`.
 
-**Format sound the way the official examples do:** fold it into the flowing sentences, or
-drop a `[sound, sound, sound]` bracket group inside the paragraph (in CJK prompts use a
-`【…】` group). Do **not** append a mechanical `Audio:` / `音效：` / `音効：` heading, and do
-**not** write layer names ("as ambient", "as accent") into the prompt.
+**Format sound the way the official examples do: spread it *through* the paragraph, next to
+the beats it accompanies.** Fold each sound into the sentence describing its action, so audio
+rises and falls with the motion. You may use a short inline `[sound, sound]` bracket group
+(in CJK prompts a `【…】` group) **beside the beat it belongs to**, but do **not** collect the
+whole soundscape into one bracket tacked on at the *end* of the prompt — the model largely
+ignores a trailing catch-all group, so ambient audio dumped there never makes it into the
+video (a real, observed failure). Never append a mechanical `Audio:` / `音效：` / `音効：`
+heading, and never write layer names ("as ambient", "as accent") into the prompt.
 
 - ✗ templated: `…cold blue twilight. Audio: wind over rooftops, boots creaking, a dog bark as accent.`
-- ✓ woven: `…cold blue twilight as [wind moans over empty rooftops, her boots creak on frost, a lone dog barks far off].`
+- ✗ trailing dump: `…she crosses the frozen yard to the gate and stops. 【wind over rooftops, boots creaking on frost, a lone dog barking】` — everything parked at the end; the model skips it.
+- ✓ threaded: `Wind moans over the empty rooftops as she steps out; her boots creak on the frost with each stride, and a lone dog barks far off just as she reaches the gate.`
 
 ### Mood → audio cheat sheet
 
@@ -320,13 +337,13 @@ there's no character on screen or a line would break the moment.
   over the wind`) and, if useful, reinforce with an accent sound (a gasp before, a sob
   after).
 
-Example (embedded dialogue, woven audio): `Cinematic tight close-up: a weary old fisherman
-lowers his lantern and turns to the young woman, his eyes wet, and says in a cracked
-whisper, "You came back." Slow push-in, warm lantern glow against black night, [waves lap on
-wet rock, wind sighs, a soft catch of breath just before he speaks].`
+Example (embedded dialogue, sound threaded to beats): `Cinematic tight close-up: a weary old
+fisherman lowers his lantern as waves lap on the wet rock below him, then turns to the young
+woman, his eyes wet; the wind sighs and his breath catches just before he says, in a cracked
+whisper, "You came back." Slow push-in, warm lantern glow against black night.`
 
-The skill also records dialogue as structured data (`speaker` + `line`) to emit a
-`transcript.txt` per chapter and to check each line is embedded and fits its clip — but the
+The skill also records dialogue as structured data (`speaker` + `line`) as internal metadata
+in the chapter JSON — used only to check each line is embedded and fits its clip — but the
 model itself only ever reads the quoted line inside the prompt.
 
 ---
@@ -378,15 +395,15 @@ params in metadata so a human regenerating a clip has correct starting values.
 
 # Part 8 — Worked examples
 
-**Woven-audio single beat:**
+**Woven-audio single beat (sound threaded to each beat):**
 
-> A lone hiker stops mid-stride and slowly turns to look back over her shoulder, her breath
-> fogging in the cold. She wears a worn red parka and a heavy backpack, boots caked in mud.
-> Behind her a narrow trail winds into a dense autumn pine forest wrapped in low evening
-> mist. Medium tracking shot from behind, easing into a slow push-in on her face.
-> Golden-hour light rakes low through the trees, warm on one cheek, deep blue shadow on the
-> other. [crunching footsteps on dry leaves, wind whispering through pine branches, distant
-> owl hooting], then a sharp [twig snaps] as she freezes.
+> A lone hiker stops mid-stride and slowly turns to look back over her shoulder, dry leaves
+> crunching under her boots as she pivots, her breath fogging in the cold. She wears a worn
+> red parka and a heavy backpack, boots caked in mud. Behind her a narrow trail winds into a
+> dense autumn pine forest wrapped in low evening mist, wind whispering through the pine
+> branches and a distant owl hooting. Medium tracking shot from behind, easing into a slow
+> push-in on her face. Golden-hour light rakes low through the trees, warm on one cheek, deep
+> blue shadow on the other. A twig snaps sharply off to her left and she freezes.
 
 **Camera-driven, imagine-the-shot (verbatim monster-truck example):**
 
@@ -424,7 +441,7 @@ Before saving each scene, re-read the prompt against every item:
 
 **Subject & emotion**
 6. Characters defined concretely (age, hair, clothing, distinguishing details) from the
-   cast sheet, identical across clips.
+   cast sheet, restated **verbatim** (identical anchor words) in every clip — no paraphrase.
 7. Emotion shown via posture/gesture/expression only — **no bare internal-state labels.**
 
 **Scene & light**
@@ -432,8 +449,8 @@ Before saving each scene, re-read the prompt against every item:
 9. One consistent, motivated lighting scheme.
 
 **Audio & dialogue**
-10. 3–5 layered sounds woven into prose or a `[…]` / `【…】` group — no `Audio:` label, no
-    layer names.
+10. 3–5 layered sounds **threaded next to their beats through the paragraph** — never a
+    trailing catch-all bracket, no `Audio:` label, no layer names.
 11. Dialogue in quotes, embedded inline, with delivery attribution; one spoken line per
     scene where possible; fits the clip's time budget; in the novel's language.
 

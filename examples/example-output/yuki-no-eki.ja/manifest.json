@@ -1,19 +1,22 @@
 {
   "novel": "yuki-no-eki.ja",
   "source_file": "D:\\Sources\\NovelVideoPromptMaker\\examples\\yuki-no-eki.ja.txt",
-  "created": "2026-07-03T16:09:49",
+  "created": "2026-07-07T10:34:09",
   "recommended_params": {
-    "sampling_steps": 24,
-    "cfg_scale": 6.5,
-    "fps": 25,
-    "resolution": "720p"
+    "sampling_steps": 30,
+    "video_cfg": 3.0,
+    "audio_cfg": 7.0,
+    "fps": 24,
+    "frames": 121,
+    "resolution": "720p",
+    "note": "LTX-2.3 full/dev defaults; distilled model uses ~12 steps at cfg 1.0 (no negative). Frame count must be 8k+1; dims multiple of 32/64."
   },
   "chapter_count": 2,
   "chapters": [
     {
       "number": 1,
       "title": "第一話 夜明け前の出発",
-      "dir": "chapter-001-第一話-夜明け前の出発",
+      "file": "chapter-001-第一話-夜明け前の出発.json",
       "word_count": 252,
       "scene_count": 2,
       "status": "generated"
@@ -21,7 +24,7 @@
     {
       "number": 2,
       "title": "第二話 揺れる橋",
-      "dir": "chapter-002-第二話-揺れる橋",
+      "file": "chapter-002-第二話-揺れる橋.json",
       "word_count": 309,
       "scene_count": 2,
       "status": "generated"

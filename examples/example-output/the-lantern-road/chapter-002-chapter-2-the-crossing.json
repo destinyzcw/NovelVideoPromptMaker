@@ -1,0 +1,52 @@
+{
+  "chapter_number": 2,
+  "chapter_title": "Chapter 2: The Crossing",
+  "word_count": 131,
+  "source_text": "By midday the forest gave way to a river, wide and brown and loud. The old bridge had\r\nrotted; only two ropes and a few slick planks remained, swaying above the current.\r\nMira tested the first plank with her toe. It groaned but held.\r\n\r\nShe crossed one careful step at a time, gripping the wet rope until her knuckles ached,\r\nthe water roaring below. Halfway across a plank cracked and dropped away, and she froze,\r\none foot over nothing, breath caught hard in her chest. For a long moment she simply\r\nclung there, trembling. Then she found the next board with her boot and moved again,\r\nslow and certain, until at last she stumbled onto the far bank and lay in the mud,\r\nlaughing and gasping at the bright noon sky.",
+  "status": "generated",
+  "characters": [
+    {
+      "name": "Mira",
+      "description": "woman in her twenties, dark hair tied back, patched red wool cloak, heavy canvas pack, dented brass lantern hanging from the pack"
+    }
+  ],
+  "scene_count": 2,
+  "scenes": [
+    {
+      "index": 1,
+      "title": "Testing the broken bridge",
+      "source_excerpt": "By midday the forest gave way to a river, wide and brown and loud. The old bridge had rotted; only two ropes and a few slick planks remained, swaying above the current. Mira tested the first plank with her toe. It groaned but held.",
+      "prompt": "A handheld midday shot watches from the far bank across a wide brown river, framing a woman in her twenties, dark hair tied back, patched red wool cloak, heavy canvas pack, dented brass lantern hanging from the pack low as she crouches at the ruined rope bridge. The river roars and churns below while the camera drifts unsteadily toward her boot reaching for the first slick plank. The old plank groans under her toe, and the lens tightens on the board before tilting up to her white-knuckled hand clamped on the wet rope. Wind buffets across open water and snaps her cloak toward the lens as only two ropes and a few wet boards sway between her and the camera. Bright flat noon light glints in cold spray, muted greens and browns, as she mutters toward the crossing, \"Hold for me. Just hold.\"",
+      "negative_prompt": "text overlay, subtitles, watermark, warped hands, extra fingers, calm still water, intact modern bridge, nighttime",
+      "suggested_duration_seconds": 7,
+      "continuation": false,
+      "end_state": "",
+      "dialogue": [
+        {
+          "speaker": "Mira",
+          "line": "Hold for me. Just hold."
+        }
+      ],
+      "estimated_speech_seconds": 2.0,
+      "prompt_word_count": 143
+    },
+    {
+      "index": 2,
+      "title": "The plank breaks",
+      "source_excerpt": "Halfway across a plank cracked and dropped away, and she froze, one foot over nothing, breath caught hard in her chest. Then she found the next board with her boot and moved again, slow and certain, until at last she stumbled onto the far bank and lay in the mud, laughing and gasping at the bright noon sky.",
+      "prompt": "The camera rides close and handheld on the bridge beside a woman in her twenties, dark hair tied back, patched red wool cloak, heavy canvas pack, dented brass lantern hanging from the pack as a sharp wooden crack splits under her boot. The broken plank drops with a splash into the roaring current, and the lens whips from her white-knuckled grip up to her face as she freezes, one boot swinging over churning brown water. Holding tight on her clenched jaw, it stays with her as her breath rasps through her teeth and she says, \"Almost there. Almost,\" while feeling for the next board. She lunges the last step; the camera pulls back and widens to follow her stumble onto the far bank, where mud squelches under her knees. Harsh noon daylight leaves a wet sheen on everything as her breath breaks into breathless laughter up into the lens.",
+      "negative_prompt": "text overlay, subtitles, watermark, warped hands, extra people, calm expression, still water, static background",
+      "suggested_duration_seconds": 8,
+      "continuation": false,
+      "end_state": "",
+      "dialogue": [
+        {
+          "speaker": "Mira",
+          "line": "Almost there. Almost,"
+        }
+      ],
+      "estimated_speech_seconds": 1.2,
+      "prompt_word_count": 149
+    }
+  ]
+}

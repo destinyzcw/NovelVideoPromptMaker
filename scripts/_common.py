@@ -7,8 +7,23 @@ from __future__ import annotations
 
 import json
 import re
+import sys
 from pathlib import Path
 from typing import List
+
+
+def enable_utf8_stdout() -> None:
+    """Make stdout/stderr tolerate non-ASCII (CJK titles, prompts) on any console.
+
+    On a Windows console the default code page is often cp1252, so printing a Chinese
+    or Japanese path/title raises UnicodeEncodeError. Reconfiguring to UTF-8 with
+    errors='replace' keeps the scripts from crashing on progress output.
+    """
+    for stream in (sys.stdout, sys.stderr):
+        try:
+            stream.reconfigure(encoding="utf-8", errors="replace")  # type: ignore[attr-defined]
+        except Exception:
+            pass
 
 # Chapter marker: matches "Chapter 1", "Chapter XII: Title", "CHAPTER 3 - Dawn",
 # and common CJK forms — Chinese "第1章"/"第十二章 标题" and Japanese "第一話"/"第3回".
@@ -103,6 +118,26 @@ def estimate_speech_seconds(text: str) -> float:
     return len(cjk) / _CJK_CHARS_PER_SEC + latin_words / _LATIN_WORDS_PER_SEC
 
 
+def is_cjk(text: str) -> bool:
+    """True if the text contains Chinese/Japanese characters (kana or ideographs)."""
+    return bool(re.search(r"[\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9fff]", text or ""))
+
+
+def default_negative(prompt: str) -> str:
+    """English-only fallback negative prompt.
+
+    Negative prompts are authored by the agent in the scene's own language — the script
+    does NOT translate (hand-baked translations drift and mislead). This returns a generic
+    English fallback only when an English prompt has no negative; for a non-English (CJK)
+    prompt it returns "" so the caller can warn the agent to author a localized negative
+    instead of injecting a mistranslated one.
+    """
+    if is_cjk(prompt):
+        return ""
+    return ("text overlay, subtitles, watermark, warped hands, extra fingers, "
+            "static frozen frame, blurry")
+
+
 def parse_chapters(text: str, chapter_regex: str = DEFAULT_CHAPTER_REGEX) -> List[dict]:
     """Split novel text into [{number, title, text}].
 
@@ -128,5 +163,5 @@ def parse_chapters(text: str, chapter_regex: str = DEFAULT_CHAPTER_REGEX) -> Lis
     return chapters
 
 
-def chapter_dirname(number: int, title: str) -> str:
-    return f"chapter-{number:03d}-{slugify(title)}"
+def chapter_filename(number: int, title: str) -> str:
+    return f"chapter-{number:03d}-{slugify(title)}.json"

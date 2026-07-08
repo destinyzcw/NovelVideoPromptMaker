@@ -1,19 +1,22 @@
 {
   "novel": "the-lantern-road",
   "source_file": "D:\\Sources\\NovelVideoPromptMaker\\examples\\the-lantern-road.txt",
-  "created": "2026-07-03T16:09:48",
+  "created": "2026-07-07T10:29:20",
   "recommended_params": {
-    "sampling_steps": 24,
-    "cfg_scale": 6.5,
-    "fps": 25,
-    "resolution": "720p"
+    "sampling_steps": 30,
+    "video_cfg": 3.0,
+    "audio_cfg": 7.0,
+    "fps": 24,
+    "frames": 121,
+    "resolution": "720p",
+    "note": "LTX-2.3 full/dev defaults; distilled model uses ~12 steps at cfg 1.0 (no negative). Frame count must be 8k+1; dims multiple of 32/64."
   },
   "chapter_count": 2,
   "chapters": [
     {
       "number": 1,
       "title": "Chapter 1: The Departure",
-      "dir": "chapter-001-chapter-1-the-departure",
+      "file": "chapter-001-chapter-1-the-departure.json",
       "word_count": 129,
       "scene_count": 2,
       "status": "generated"
@@ -21,7 +24,7 @@
     {
       "number": 2,
       "title": "Chapter 2: The Crossing",
-      "dir": "chapter-002-chapter-2-the-crossing",
+      "file": "chapter-002-chapter-2-the-crossing.json",
       "word_count": 131,
       "scene_count": 2,
       "status": "generated"

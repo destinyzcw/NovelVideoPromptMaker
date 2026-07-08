@@ -1,19 +1,22 @@
 """Split a novel .txt into chapters and scaffold the output project.
 
 This is the deterministic first step of the skill. It does NOT write any prompts —
-it just parses chapters and lays out folders so the agent can read each chapter's
-source and decide scene boundaries.
+it just parses chapters and lays out one scenes.json per chapter (carrying the verbatim
+chapter text) so the agent can read each chapter and decide scene boundaries.
 
 Usage:
     python split_chapters.py NOVEL.txt --out OUTPUT_DIR [--title NAME] [--regex RE]
 
 Produces:
     OUTPUT_DIR/<novel-slug>/
-        manifest.json                 # index of chapters + status tracking
-        chapter-001-<slug>/
-            source.txt                # verbatim chapter text (read this to write scenes)
-            chapter.json              # {number, title, char_count, word_count}
-        chapter-002-<slug>/ ...
+        manifest.json                       # index of chapters + status tracking
+        chapter-001-<slug>.json             # {chapter_number, chapter_title, word_count,
+                                            #  source_text, status, characters, scenes:[]}
+        chapter-002-<slug>.json ...
+
+The agent reads each chapter file's `source_text`, plans scenes, and hands them to
+save_scenes.py, which fills the same chapter file in place. Each chapter is a single flat
+JSON file — there are no per-chapter folders, source.txt, or chapter.json.
 """
 from __future__ import annotations
 
@@ -26,8 +29,9 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from _common import (  # noqa: E402
     DEFAULT_CHAPTER_REGEX,
     RECOMMENDED_PARAMS,
-    chapter_dirname,
+    chapter_filename,
     dump_json,
+    enable_utf8_stdout,
     parse_chapters,
     read_text,
     slugify,
@@ -36,6 +40,7 @@ from _common import (  # noqa: E402
 
 
 def main() -> int:
+    enable_utf8_stdout()
     ap = argparse.ArgumentParser(description="Split a novel into chapters and scaffold output.")
     ap.add_argument("novel", help="Path to the novel .txt file")
     ap.add_argument("--out", required=True, help="Output root directory")
@@ -61,22 +66,24 @@ def main() -> int:
 
     manifest_chapters = []
     for ch in chapters:
-        dirname = chapter_dirname(ch["number"], ch["title"])
-        ch_dir = os.path.join(project_dir, dirname)
-        os.makedirs(ch_dir, exist_ok=True)
+        fname = chapter_filename(ch["number"], ch["title"])
 
-        with open(os.path.join(ch_dir, "source.txt"), "w", encoding="utf-8") as fh:
-            fh.write(ch["text"])
-        dump_json(os.path.join(ch_dir, "chapter.json"), {
-            "number": ch["number"],
-            "title": ch["title"],
-            "char_count": len(ch["text"]),
+        # One self-contained flat file per chapter: the verbatim text lives here as
+        # source_text, and save_scenes.py fills in characters + scenes in place.
+        dump_json(os.path.join(project_dir, fname), {
+            "chapter_number": ch["number"],
+            "chapter_title": ch["title"],
             "word_count": word_count(ch["text"]),
+            "source_text": ch["text"],
+            "status": "pending",  # pending -> generated (after save_scenes.py)
+            "characters": [],
+            "scene_count": 0,
+            "scenes": [],
         })
         manifest_chapters.append({
             "number": ch["number"],
             "title": ch["title"],
-            "dir": dirname,
+            "file": fname,
             "word_count": word_count(ch["text"]),
             "scene_count": None,
             "status": "pending",  # pending -> generated (after save_scenes.py)
@@ -92,12 +99,15 @@ def main() -> int:
     })
 
     print(f"Project created: {project_dir}")
-    print(f"Parsed {len(chapters)} chapter(s). Read each source.txt, then call save_scenes.py.\n")
+    print(f"Parsed {len(chapters)} chapter(s). Read each chapter file's source_text, "
+          f"then call save_scenes.py.\n")
     for c in manifest_chapters:
-        src = os.path.join(project_dir, c["dir"], "source.txt")
-        print(f"  Ch {c['number']:>3}  {c['word_count']:>6} words  {src}")
+        cf = os.path.join(project_dir, c["file"])
+        print(f"  Ch {c['number']:>3}  {c['word_count']:>6} words  {cf}")
     return 0
 
 
 if __name__ == "__main__":
     raise SystemExit(main())
+
+
