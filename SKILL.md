@@ -340,16 +340,37 @@ durations, characters named without their canonical look restated (appearance-dr
 `continuation` scene whose predecessor has no `end_state`). Fix anything it reports (rewrite
 the scene, re-run `save_scenes.py`), then re-validate.
 
-### Step 6 — Render and chain in DrawThings (only if you marked continuations)
+### Step 6 — Render the clips (optional automated path)
 
-If any scene is `continuation: true`, tell the user to render the chapter's clips **in
-order** and, for each continuation scene, use the previous clip's **last frame** as its
-start image — DrawThings does this natively (its image-to-video / "use last frame" option),
-so there's no frame-extraction step in this skill. The `continuation` flag marks which
-scenes to chain and each feeding scene's `end_state` describes the frame being carried.
-Finally the user concatenates the clips (e.g. a short cross-fade to hide micro-differences)
-and, if needed, lays one continuous audio track over the stitched result since per-clip
-audio won't line up.
+Once a project validates, you can turn every scene's prompt into an actual LTX-2.3 video
+clip — audio and spoken dialogue included — with `render_videos.py`, which drives the
+**Draw Things CLI** (`draw-things-cli generate`):
+
+```
+python scripts/render_videos.py --project "PATH/TO/output/<novel-slug>" \
+    --model <ltx-2-checkpoint.ckpt> [--dry-run]
+```
+
+- Requires `draw-things-cli` (and `ffmpeg` if you want continuation chaining) on the
+  machine where Draw Things' models live. `--dry-run` prints the exact commands first.
+- Writes `output/<novel-slug>/videos/chNNN-sceneMM.mp4` plus a `render-manifest.json`.
+  Frames are derived from each scene's `suggested_duration_seconds` at ~24 fps and snapped
+  to LTX-2.3's required `8k+1` count; it skips clips already rendered (`--overwrite` to redo).
+- **Why the CLI and not the HTTP API:** Draw Things' HTTP API returns only image frames
+  (no audio track), which would silently drop every spoken line — so this skill renders via
+  the CLI, which muxes the model's synchronized audio into a real video file.
+
+**Continuation chaining is automatic here:** for each `continuation: true` scene, the script
+extracts the previous clip's **last frame** (via ffmpeg) and feeds it to the CLI as the
+image-to-video start image, carrying the character's look across the seam. After rendering,
+concatenate the clips (a short cross-fade hides micro-differences); lay one continuous audio
+track over a stitched multi-clip run if per-clip audio doesn't line up.
+
+**Manual alternative (Draw Things app UI):** paste each scene's prompt into DrawThings and
+render the chapter's clips **in order**; for each continuation scene use the previous clip's
+last frame as its start image (DrawThings' native "use last frame" image-to-video option).
+The `continuation` flag marks which scenes to chain and each feeding scene's `end_state`
+describes the frame being carried.
 
 ## Output layout (what the user gets)
 

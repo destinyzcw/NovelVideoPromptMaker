@@ -21,6 +21,7 @@ scripts/
   split_chapters.py            # novel.txt -> one flat chapter-NNN.json per chapter + manifest
   save_scenes.py               # persist a chapter's scenes into its chapter-NNN.json file
   validate.py                  # check prompts + chapter-to-clip mapping integrity
+  render_videos.py             # drive draw-things-cli to render each scene into an LTX-2.3 clip (with audio)
 examples/
   the-lantern-road.txt         # tiny English sample novel
   shan-zhong-ye-xing.zh.txt    # Chinese sample (第1章 / 第2章)
@@ -56,9 +57,13 @@ python scripts/split_chapters.py examples/the-lantern-road.txt --out output
 # (agent reads each chapter's source_text from chapter-NNN.json and writes the scenes back)
 python scripts/save_scenes.py --project output/the-lantern-road --chapter 1 --scenes scenes.json
 python scripts/validate.py --project output/the-lantern-road
+# optional: render each scene to an LTX-2.3 clip (audio + dialogue) via draw-things-cli
+python scripts/render_videos.py --project output/the-lantern-road --model <ltx-2.ckpt> --dry-run
 ```
 
 No third-party dependencies for the core scripts — Python 3.8+ standard library only.
+`render_videos.py` additionally needs the `draw-things-cli` binary (and `ffmpeg` for
+continuation chaining) on the machine where Draw Things' models live.
 
 ## Chaining long sequences (clip continuation)
 
@@ -68,10 +73,61 @@ and give the feeding scene an `end_state` (its final-frame framing/pose/lighting
 continuation prompt then opens from that state and describes only the onward motion.
 **DrawThings chains the clips for you**: render the run in order and start each continuation
 scene from the previous clip's **last frame** (its native image-to-video / "use last frame"
-option), so the character's look carries over pixel-for-pixel. There is no frame-extraction
-step in this skill.
+option), so the character's look carries over pixel-for-pixel. `render_videos.py` automates
+this seam by extracting the previous clip's last frame with ffmpeg (see *Rendering to video*
+below); in the DrawThings app UI it's built in, with no manual frame-extraction step.
 
 `validate.py` flags a `continuation` scene whose predecessor has no `end_state`.
+
+## Rendering to video
+
+`scripts/render_videos.py` turns a validated project's scene prompts into actual LTX-2.3
+video clips — with **synchronized audio and spoken dialogue** — by driving the
+**Draw Things CLI** (`draw-things-cli generate`). Run it on the machine where Draw Things'
+models live (e.g. your Mac):
+
+```bash
+# preview the exact commands without generating anything:
+python scripts/render_videos.py --project output/<novel-slug> --model <ltx-2.ckpt> --dry-run
+
+# render the whole project (skips clips already rendered):
+python scripts/render_videos.py --project output/<novel-slug> --model <ltx-2.ckpt>
+
+# sanity-check settings on one chapter / first N clips first:
+python scripts/render_videos.py --project output/<novel-slug> --model <ltx-2.ckpt> --chapter 1 --limit 2
+```
+
+Output lands in `output/<novel-slug>/videos/chNNN-sceneMM.mp4` alongside a
+`render-manifest.json` recording what was rendered (with the exact command per clip).
+
+**Why the CLI and not the HTTP API.** Draw Things' HTTP API (`/sdapi/v1/txt2img`) returns
+only image **frames** in its JSON `images` array — it carries **no audio track**. Since this
+skill embeds a spoken line in (nearly) every prompt, rendering over HTTP would silently drop
+all dialogue and ambient audio. `draw-things-cli generate` retrieves the model's audio
+alongside the frames and muxes them into a real `.mp4`/`.mov`, so it's the correct path.
+
+**Frame count & size.** Each scene's `suggested_duration_seconds` is converted to
+`frames = round(duration × fps)` (fps 24 by default) and snapped to LTX-2.3's required
+`8k+1` count, capped at 201 (the model maximum, ~8 s). Size comes from a `--resolution`
+preset (`720p`, `720p-portrait`, `1080p`, `1080p-portrait`, `512`) or explicit
+`--width/--height`, snapped to multiples of 64.
+
+**Continuation chaining is automatic.** For each `continuation: true` scene the script
+extracts the previous clip's last frame (via ffmpeg) and feeds it to the CLI as the
+image-to-video start image (`--image`, at `--continuation-strength`), carrying the
+character's look across the seam. Without ffmpeg installed, those scenes fall back to plain
+text-to-video and a warning is printed.
+
+**Useful flags:** `--dry-run` (print commands only), `--chapter N` / `--scene I` / `--limit N`
+(subset), `--overwrite` (re-render existing clips; default is skip), `--steps` / `--cfg` /
+`--fps` (override the manifest defaults), `--no-negative` (for distilled models run at
+cfg ~1.0), `--container mov` (ProRes), `--seed`, and `--cli` / `--ffmpeg` / `--models-dir`
+to point at non-default binaries or model directories. Everything after `--extra` is passed
+verbatim to `draw-things-cli`.
+
+**Requirements:** the `draw-things-cli` binary
+(`brew install --HEAD drawthingsai/draw-things/draw-things-cli`) and, for continuation
+chaining, `ffmpeg`. The script itself is Python 3.8+ standard library only.
 
 ## Spoken dialogue
 
