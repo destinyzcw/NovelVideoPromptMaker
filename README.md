@@ -45,12 +45,16 @@ story / prose ──▶ screenplay-writer ──▶ 剧本 (scenes+dialogue)
   deciding which appearance changes need a separate anchor vs. words.
 - Shot design driven by drama: 正反打 for dialogue, 跟拍/手持 for action, 特写+慢推 for
   emotion; per shot picks 景别 / 时长 / 运镜 / 机位 / 画面描述 / 对白.
-- Composes each image prompt for the project's default backend — **Z-Image Turbo (Tongyi-MAI)
-  in ComfyUI**: long natural-language prompts, identity carried by verbatim anchor phrases (the
-  base model is text-to-image with no reference-image input), exclusions baked into the positive
-  prompt (negative prompts are ignored / CFG=0), lighting as its own clause, and suggested ComfyUI
-  parameters — **without calling any model.** A general reference-image playbook is included for
-  other backends, plus optional first/last-frame variants for a separate video model.
+- Per shot it emits **two** Z-Image Turbo image prompts — a **首帧 (start)** and **尾帧 (end)**
+  keyframe (identical except the action phase, sharing one seed) — plus an **LTX-2.3 FLF2V video
+  prompt** that animates start→end and **keeps the scene's narration and dialogue** (LTX-2.3
+  generates synchronized audio incl. speech; dialogue/VO go in the prompt with speaker + tone).
+- Composes the image prompts for the default backend — **Z-Image Turbo (Tongyi-MAI) in ComfyUI**:
+  long natural-language prompts, identity carried by verbatim anchor phrases (the base model is
+  text-to-image with no reference-image input), exclusions baked into the positive prompt (negative
+  prompts are ignored / CFG=0), lighting as its own clause, and suggested ComfyUI parameters —
+  **without calling any model.** Reference playbooks are included for Z-Image Turbo, LTX-2.3 video,
+  and other reference-capable image backends.
 
 ### storyboard-render-loop (novel → rendered frames)
 - **Orchestrator** that runs the two skills above on a novel excerpt, then renders every shot
@@ -75,7 +79,8 @@ NovelVideoPromptMaker/
 ├── storyboard-prompt/
 │   ├── SKILL.md
 │   └── references/
-│       ├── z-image-turbo.md               # DEFAULT backend: Z-Image Turbo in ComfyUI
+│       ├── z-image-turbo.md               # DEFAULT image backend: Z-Image Turbo in ComfyUI
+│       ├── ltx2-video.md                  # DEFAULT video backend: LTX-2.3 FLF2V (dialogue/VO/audio)
 │       └── prompt-composition.md          # general playbook for reference-capable backends
 ├── storyboard-render-loop/
 │   ├── SKILL.md
@@ -85,7 +90,8 @@ NovelVideoPromptMaker/
 │   ├── agents/qa-inspect.md                # per-frame vision-QA subagent prompt
 │   ├── references/
 │   │   ├── comfyui-api.md                  # endpoints, workflow export, params, troubleshooting
-│   │   └── z-image-turbo.md               # prompt playbook (shared with storyboard-prompt)
+│   │   ├── z-image-turbo.md               # image prompt playbook (shared with storyboard-prompt)
+│   │   └── ltx2-video.md                   # LTX-2.3 FLF2V video prompt playbook (shared)
 │   └── .env.example                        # COMFYUI_HOST for the remote GPU box
 └── examples/                               # real test input/output
     ├── screenplay-writer/{input,output}.md

@@ -6,8 +6,11 @@ description: >-
   this whenever the user wants to break a scene into shots, design 分镜 / storyboard, decide
   景别/运镜/机位 (shot size, camera movement, angle), or write prompts to generate storyboard
   reference images / keyframes for an image model — even if they just say "拆分镜", "写分镜",
-  "generate storyboard prompts", "给这场戏做分镜图", or "把剧本变成分镜". It produces the shot
-  design AND the text prompts, but does NOT call any specific image/video model — you hand the
+  "generate storyboard prompts", "给这场戏做分镜图", or "把剧本变成分镜". For each shot it
+  produces a start-frame (首帧) and end-frame (尾帧) image prompt PLUS an LTX-2.3
+  FLF2V video prompt (keeping the scene's narration and dialogue) to drive
+  image-to-video between them. It produces the shot design AND
+  the text prompts, but does NOT call any specific image/video model — you hand the
   prompts to whatever backend you use. Default target is Z-Image Turbo in ComfyUI. This is the
   second stage after the screenplay-writer skill. Also trigger on "z-image", "z-image-turbo",
   "ComfyUI 分镜/提示词", "给分镜写提示词", or turning a scene into image-gen prompts.
@@ -27,6 +30,11 @@ it **ignores negative prompts** (CFG=0 → bake exclusions into the positive pro
 **long, precise natural-language** prompts, not tag lists. If the user targets a different model
 (e.g. a reference-capable editor or a cloud API), fall back to the general multi-backend playbook
 in `references/prompt-composition.md`.
+
+**Default video target: LTX-2.3 (Lightricks) in ComfyUI, FLF2V mode.** The 首帧/尾帧 stills feed
+its first-last-frame workflow, and LTX-2.3 generates synchronized **audio incl. dialogue**, so the
+per-shot video prompt carries the scene's 台词 and VO/旁白. Read `references/ltx2-video.md` before
+writing video prompts.
 
 Two things make good storyboards hard: choosing shots that serve the drama, and keeping
 character/scene appearance **consistent** across shots and episodes. This skill encodes both.
@@ -92,16 +100,61 @@ Turn each shot into a natural-language image prompt for **Z-Image Turbo**. Read
   the negative-prompt box is ignored by this model, so don't rely on it.
 - **Style vs. content** — apply only the *style phrase*; if the art-style description names a
   concrete place/subject that conflicts with this shot, keep its look, drop its content.
-- **Keyframes** — Z-Image Turbo makes stills; if a shot will drive a separate video model, add a
-  **first-frame** (开场定格：动作开始前/刚开始) and/or **last-frame** (结束定格：动作完成后的结果)
-  variant that differs only in the action-phase clause.
+- **Keyframes are the deliverable, not an afterthought.** Every shot produces **two full,
+  standalone Z-Image Turbo prompts** — a **首帧 (start frame)** at the action's opening phase
+  (动作开始前 / 刚发力 / 情绪起点) and a **尾帧 (end frame)** at its resolved phase (动作完成后的
+  结果 / 情绪落点). Write them as complete prompts, not deltas. They must be **identical in
+  everything except the action/expression phase** — same 景别 baseline, same anchor phrases
+  verbatim, same environment, same lighting clause, same style clause, same constraints — so the
+  two frames read as the same shot and can be interpolated by a video model. Only the moment-in-
+  time changes (and, if 运镜 moves the camera, the framing may shift start→end; state that shift
+  explicitly in both prompts). Reuse the **same seed** for 首帧 and 尾帧 so they stay visually
+  coherent. For a genuinely static shot, the two prompts differ only by a micro-beat (a breath, a
+  gaze shift) — say so rather than duplicating verbatim.
 
 If the user instead targets a reference-capable model (image editor / cloud API that accepts
 reference images), switch to the reference-ordering rules in `references/prompt-composition.md`.
 
+### Pass 3 — Compose the LTX-2.3 video prompt (FLF2V, per shot)
+
+Each shot also gets one **video prompt** that animates 首帧 → 尾帧. The target is
+**LTX-2.3** (Lightricks) via ComfyUI's **FLF2V** (first-last-frame → video)
+workflow: the two Z-Image frames are the start/end images, and this prompt drives
+the motion **and the audio**. LTX-2.3 is an audio+video model, so **this is where
+the screenplay's narrative and dialogue survive into the video stage** — keep the
+台词 and VO/旁白. Read `references/ltx2-video.md` for the full playbook. Keep
+actual video generation out of scope; you only write the prompt.
+
+Write **one present-tense, flowing paragraph** (a mini-screenplay, no bullet
+lists) that choreographs the beat, using temporal connectors (随后/接着/与此同时/
+as/then/while). Include, in narrative order:
+
+- **运镜 (camera)** — the shot's 景别/机位 plus the camera *move* and speed,
+  related to the action ("镜头随他抬腿而侧移").
+- **主体运动 (action)** — the motion across the gap between 首帧 and 尾帧, with
+  cause→effect and small physical detail; emotion via body language.
+- **环境运动 (ambient)** — only the *moving* atmosphere (风、雾、发丝、碎屑、光闪);
+  don't re-describe the frames' fixed appearance — the images already carry it.
+- **音频与叙事 (audio + narrative)** — the core reason to keep dialogue:
+  - **台词** in quotation marks with **speaker + tone**, verbatim from the
+    screenplay: `赵天骄冷笑着说：“一个废物，也配觊觎宗门功法？”`
+  - **VO / 旁白 / 内心独白** as a tagged spoken line:
+    `林越（画外音，压抑）：“我不甘心……”`
+  - **环境音/音效** (风声、碎石、掌风闷响) and an optional music bed, ordered with
+    the action.
+- **节奏与时长 (pacing)** — echo the shot's 时长 and how energy changes
+  (蓄力→爆发/推进→停顿).
+- End with a **guardrail** clause so speech is voiced, not printed:
+  `画面无字幕、无水印、无台词文字，动作连贯、无闪烁`.
+
+Do not put the anchor phrases or the 画风/约束 image clauses in the video prompt,
+and never feed this prompt to Z-Image. Keep dialogue in its original language
+even if you describe motion in English (see the language note in the reference).
+
 ## Output template
 
-Produce Markdown: a shot-list table per scene, then a prompt block per shot.
+Produce Markdown: a shot-list table per scene, then a block per shot containing the two frame
+prompts and the LTX-2.3 video prompt.
 
 ```markdown
 ## 分镜：第 {集} 集 · {集数}-{场次} {地点}
@@ -109,16 +162,30 @@ Produce Markdown: a shot-list table per scene, then a prompt block per shot.
 **画风(style phrase)**：{可直接粘贴的一句话画风}
 **锚点**：{角色/场景/道具名 → 不变的外观短语，逐个列出}
 
-| 镜号 | 景别 | 时长(s) | 运镜 | 机位 | 画面描述 | 对白 | 用到的锚点 |
+| 镜号 | 景别 | 时长(s) | 运镜 | 机位 | 画面描述(首→尾) | 对白 | 用到的锚点 |
 |----|----|------|----|----|------|----|------|
-| 01 | 中景 | 4 | 固定 | 平视 | 林越推门而入，雨水顺风衣滴落，门厅昏黄 | — | 林越/门厅 |
-| 02 | 特写 | 3 | 慢推 | 平视 | 林越眼神从警惕转为震惊 | 林越：你早就知道了 | 林越 |
+| 01 | 中景 | 4 | 慢推 | 平视 | 林越推门而入 → 停步，眼神从警惕转为震惊 | 林越：你早就知道了 | 林越/门厅 |
 
-### 镜号 01 — Z-Image Turbo 提示词
-{一段自然语言中文提示词：景别机位+主体+锚点短语+动作+环境+光线+氛围+画风+约束}
-建议参数：steps 9｜cfg 0｜1024×1024｜固定seed
-（首帧：…；尾帧：…）  ← 仅在该镜头要驱动视频时给出
+### 镜号 01
+**首帧 (start) — Z-Image Turbo 提示词**
+{完整自然语言提示词：景别机位+主体+锚点短语+动作起点+环境+光线+氛围+画风+约束}
+建议参数：steps 9｜cfg 0｜1024×1024｜固定seed=<S>
+
+**尾帧 (end) — Z-Image Turbo 提示词**
+{完整自然语言提示词：与首帧逐字相同，只改动作/表情阶段（与必要的构图位移）}
+建议参数：steps 9｜cfg 0｜1024×1024｜固定seed=<S>
+
+**LTX-2.3 视频提示词 (FLF2V, 首帧→尾帧，含台词/旁白)**
+{一段现在时连续段落：运镜 + 主体运动 + 环境运动 + 台词（带说话人与语气，引号内逐字保留）
+ + VO/旁白 + 环境音/音效 + 节奏时长 + 画面无字幕水印的约束}
 ```
+
+> **只有两段「首帧/尾帧」提示词进入 Z-Image 的 CLIPTextEncode。** `建议参数` 是给采样器的
+> （steps/cfg/尺寸/seed 在 KSampler / 空 latent 节点设置，不是靠文字），`LTX-2.3 视频提示词`
+> 是给 LTX-2.3 视频模型的、绝不喂给 Z-Image。Z-Image 的文本编码器（Qwen3-4B）会把提示词里的
+> 一切当作字面文字编码，且 CFG≈0、无负向提示可抑制，一旦把 `建议参数` 或运镜/台词描述留在
+> 图像提示词里，可能被当成要画的文字/数字渲染进画面（与「无文字」冲突）。务必分行、分开传递。
+> 首帧与尾帧用**同一个 seed**，以保证是同一镜头的两个瞬间；LTX-2.3 用这两帧作首/尾帧插值。
 
 ## Consistency rules (why they matter)
 
@@ -132,5 +199,7 @@ Produce Markdown: a shot-list table per scene, then a prompt block per shot.
   Mixing them is the top cause of a storyboard frame ignoring the actual shot.
 
 For the Z-Image Turbo prompt playbook (anchors, in-prompt constraints, layered scaffold, ComfyUI
-parameters, worked examples) read `references/z-image-turbo.md`. For other backends that accept
-reference images, read the general playbook in `references/prompt-composition.md`.
+parameters, worked examples) read `references/z-image-turbo.md`. For the LTX-2.3 video prompt
+playbook (FLF2V, present-tense mini-screenplay, dialogue/VO/audio syntax, guardrails, worked
+example) read `references/ltx2-video.md`. For other image backends that accept reference images,
+read the general playbook in `references/prompt-composition.md`.

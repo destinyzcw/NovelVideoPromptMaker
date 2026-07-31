@@ -105,3 +105,45 @@ Put these as a short `建议参数` line under each prompt (or once per scene if
 Note how each prompt is one flowing paragraph, embeds the fixed anchor phrases for identity,
 puts lighting in its own clause, and ends with the constraint line — no reference images, no
 negative prompt.
+
+## 7. First/last-frame pairs + the motion prompt
+
+Each shot yields **two** Z-Image prompts (首帧 + 尾帧) and one motion prompt for a video model.
+
+**How to write the pair.** Keep the two frame prompts **byte-for-byte identical except the
+action/expression clause** (and, if the camera moves, the framing clause). Same anchors, same
+environment, same lighting, same style, same constraints, and the **same seed** — so the two
+stills read as one shot at two instants and interpolate cleanly.
+
+```text
+# 首帧 (start) — 抬腿发力前一刻
+电影感全景侧面平视，二十岁左右白衣青年，身形修长，玉冠束发，眉眼锋利，银纹宗门长袍，
+冷笑抬腿正欲踹出，脚尚未触及身前踉跄的约十六岁少年，清瘦，短束发，粗布外门弟子服，
+左眉有细疤；断魂崖，陡峭黑岩断崖，崖边一株枯树，崖下深不见底的冷雾，碎石在脚边松动。
+冷调月光侧逆光拉出两人轮廓，体积雾光切开深蓝夜色。国风水墨与写实结合、冷色调、高反差
+夜景、电影构图。画面干净，无文字、无水印、无多余人物，正确的手部与肢体结构。
+建议参数：steps 10｜cfg 0｜1280×720｜固定seed=4477
+
+# 尾帧 (end) — 踹中、少年越过崖线（仅动作阶段变化）
+电影感全景侧面平视，二十岁左右白衣青年，身形修长，玉冠束发，眉眼锋利，银纹宗门长袍，
+收势的一脚已踹中约十六岁少年，清瘦，短束发，粗布外门弟子服，左眉有细疤，少年身体后弓、
+双脚离地、正越过悬崖边线坠出；断魂崖，陡峭黑岩断崖，崖边一株枯树，崖下深不见底的冷雾，
+碎石被踢飞。冷调月光侧逆光拉出两人轮廓，体积雾光切开深蓝夜色。国风水墨与写实结合、
+冷色调、高反差夜景、电影构图。画面干净，无文字、无水印、无多余人物，正确的手部与肢体结构。
+建议参数：steps 10｜cfg 0｜1280×720｜固定seed=4477
+
+# 运镜/转场 (video, 首帧→尾帧) — 交给视频模型，不喂给 Z-Image
+镜头侧面横移轻微跟随，节奏由蓄力的短暂停顿转为爆发：白衣青年抬腿、发力、一脚踹出；
+少年被踹得后弓、双脚离地、越过崖线向崖外坠出。狂风骤起掀动两人衣袂与少年乱发，
+碎石与墨色尘土被踢飞、向崖下卷落，体积雾光随动作翻涌。约 4 秒，前段紧绷、后段急促失重。
+```
+
+Rules of thumb:
+- **Only the moment-in-time changes.** If you find yourself rewording an anchor or the lighting
+  between 首帧 and 尾帧, stop — that reintroduces drift.
+- **Same seed** for the pair; only randomize if the end-frame composition genuinely needs it.
+- **Static shots**: make the pair differ by a micro-beat (a breath, a blink, a gaze shift) and
+  write a minimal motion prompt (镜头极缓推进，人物近乎静止，只有呼吸与雾气浮动).
+- **Motion prompt is backend-agnostic** (Wan2.2 FLF2V, Kling 首尾帧, Hailuo, LTX, Runway):
+  describe 运镜 + 主体运动 + 环境运动 + 节奏时长. Do **not** put anchors/style/constraints in it,
+  and never send it to Z-Image.

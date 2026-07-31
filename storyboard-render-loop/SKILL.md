@@ -83,17 +83,25 @@ what each scene contains.
 ## Stage 2 — Screenplay → storyboard + Z-Image prompts
 
 Follow the `storyboard-prompt` skill (Z-Image Turbo mode) on the screenplay to
-produce, per shot: 镜号, 景别, 运镜, 机位, 画面描述, 对白, **用到的锚点**, the
-full **Z-Image Turbo positive prompt**, and 建议参数 (steps/cfg/size/seed). Also
-capture the scene-level **画风 (style phrase)** and the **锚点表 (anchors)** —
-these are what keep characters/props consistent across frames and what the QA
-step checks against.
+produce, per shot: 镜号, 景别, 运镜, 机位, 画面描述(首→尾), 对白, **用到的锚点**,
+and — the key outputs this loop renders — a **首帧 (start) prompt** and a
+**尾帧 (end) prompt** (two full Z-Image positive prompts sharing one seed), each
+with 建议参数 (steps/cfg/size/seed), plus an **LTX-2.3 FLF2V video prompt** that
+animates 首帧→尾帧 and **keeps the shot's 台词 and VO/旁白** (LTX-2.3 generates
+synchronized audio incl. dialogue). Also capture the scene-level **画风 (style
+phrase)** and the **锚点表 (anchors)** — these keep characters/props consistent
+across frames and are what the QA step checks against.
+
+Each shot therefore has **two frames to render** (首帧 and 尾帧). The video prompt
+is carried through but **not rendered** — video generation is out of scope for
+this loop; it is stored, ready for LTX-2.3's first-last-frame workflow using the
+two solid frames as anchors.
 
 ## Stage 3 — Build the render-state manifest
 
-Create `renders/<slug>/render-state.json`: one record per shot. This is the
-loop's memory — update it after every attempt so the run is resumable and the
-final report is trivial to produce.
+Create `renders/<slug>/render-state.json`: one record per shot, with a `first`
+and `last` frame sub-record. This is the loop's memory — update it after every
+attempt so the run is resumable and the final report is trivial to produce.
 
 ```json
 {
@@ -107,67 +115,89 @@ final report is trivial to produce.
   "retry_limit": 3,
   "shots": [
     {
-      "id": "2-3-01",
-      "景别": "全景", "机位": "侧面低机位",
-      "画面描述": "狂风扫过断崖，林越被赵天骄一掌击飞…",
-      "用到的锚点": ["林越", "赵天骄", "断魂崖"],
-      "params": {"steps": 10, "cfg": 1.0, "width": 1280, "height": 720, "seed": 12345},
-      "prompt": "电影感全景，侧面低机位…画面干净，无文字、无水印…",
-      "attempts": [],
-      "status": "pending",
-      "image_path": null
+      "id": "2-3-06",
+      "景别": "全景", "机位": "侧面平视",
+      "画面描述": "赵天骄抬腿 → 踹中林越，林越越过崖线坠出",
+      "用到的锚点": ["林越", "赵天骄", "断魂崖", "残破玉简"],
+      "params": {"steps": 10, "cfg": 1.0, "width": 1280, "height": 720, "seed": 4477},
+      "video_prompt": "全景侧面平视，镜头随白衣青年抬腿而缓慢侧移…赵天骄冷笑着说：“一个废物，也配觊觎宗门功法？”…林越（画外音，压抑）：“我不甘心……”…约4秒，前段蓄力、后段失重。画面无字幕、无水印。",
+      "frames": {
+        "first": {
+          "prompt": "电影感全景侧面平视…冷笑抬腿正欲踹出…画面干净，无文字…",
+          "attempts": [], "status": "pending", "image_path": null
+        },
+        "last": {
+          "prompt": "电影感全景侧面平视…一脚已踹中…越过崖线坠出…画面干净，无文字…",
+          "attempts": [], "status": "pending", "image_path": null
+        }
+      },
+      "status": "pending"
     }
   ]
 }
 ```
 
-`status` ∈ `pending | solid | failed`. Each entry in `attempts` records
-`{n, seed, prompt, image_path, verdict, reasons, anchor_drift}`.
+Frame `status` ∈ `pending | solid | failed`. Each entry in a frame's `attempts`
+records `{n, seed, prompt, image_path, verdict, reasons, anchor_drift}`. A shot's
+top-level `status` is `solid` only when **both** frames are `solid`; `failed` if
+either frame ends `failed`. 首帧 and 尾帧 share the same seed (from `params.seed`)
+so the pair stays coherent.
 
-## Stage 4 — The render + QA loop (SERIAL, one shot at a time)
+## Stage 4 — The render + QA loop (SERIAL, one frame at a time)
 
-Process shots **strictly one at a time, in order**. Do not batch-render then
-batch-review — serial processing is what lets a lesson learned on an early frame
-(e.g. an anchor that keeps drifting, a seed that composes badly) inform the
-prompt for the next one, and it keeps the ComfyUI box from thrashing. Within a
-shot, loop until pass or limit:
+Process shots **strictly one at a time, in order**, and within a shot render the
+**首帧 then the 尾帧**. Do not batch-render then batch-review — serial processing
+is what lets a lesson learned on an early frame (e.g. an anchor that keeps
+drifting, a seed that composes badly) inform the next frame/shot, and it keeps
+the ComfyUI box from thrashing.
 
-For each shot `s`:
+For each shot `s`, for each frame `f` in (`first`, `last`), loop until pass or limit:
 
-1. **Render.** Run the client (fix the seed so revisions are comparable):
+1. **Render.** Run the client (both frames use `s.params.seed` so the pair is
+   comparable and coherent):
 
    ```
    python scripts/comfy_zimage.py \
      --host "$COMFYUI_HOST" \
-     --prompt "<s.prompt>" \
+     --prompt "<s.frames[f].prompt>" \
      --seed <s.params.seed> --steps <s.params.steps> --cfg <s.params.cfg> \
      --width <s.params.width> --height <s.params.height> \
-     --filename-prefix "shot_<s.id>" \
-     --out "renders/<slug>/<s.id>_a<attempt>.png"
+     --filename-prefix "shot_<s.id>_<f>" \
+     --out "renders/<slug>/<s.id>_<f>_a<attempt>.png"
    ```
 
-   Parse the JSON result line. On `status:"error"`, treat it as a failed attempt
-   (record the error); if it's an endpoint/config error (unreachable, wrong
-   format), STOP the whole run and tell the user — retrying won't help.
+   The client strips any stray `建议参数` / 运镜 line from the prompt, so passing
+   a slightly-dirty prompt is safe — but pass only the frame's image prompt, never
+   the motion prompt. Parse the JSON result line. On `status:"error"`, treat it as
+   a failed attempt (record the error); if it's an endpoint/config error
+   (unreachable, wrong format), STOP the whole run and tell the user — retrying
+   won't help.
 
 2. **Inspect.** Spawn a vision subagent with `agents/qa-inspect.md`, passing the
-   image path, `s.id`, `画面描述`, the relevant `锚点` (verbatim), `景别/机位/运镜`,
-   the exact prompt used, and the attempt number. It returns a strict
-   `VERDICT: pass|fail` block with `REASONS`, `ANCHOR_DRIFT`, `REVISED_PROMPT`,
-   `SEED_ADVICE`.
+   image path, `s.id` + which frame (`first`/`last`), the frame's expected
+   moment-in-time from `画面描述` (首 or 尾 phase), the relevant `锚点` (verbatim),
+   `景别/机位/运镜`, the exact prompt used, and the attempt number. It returns a
+   strict `VERDICT: pass|fail` block with `REASONS`, `ANCHOR_DRIFT`,
+   `REVISED_PROMPT`, `SEED_ADVICE`.
+
+   When inspecting the **尾帧**, also check it is **consistent with the already-
+   solid 首帧** (same character look/anchors, same environment/lighting/style) and
+   differs only in the action phase — a 尾帧 that drifts from its 首帧 fails, since
+   the pair must interpolate as one shot.
 
 3. **Decide.**
-   - **pass** → set `status:"solid"`, `image_path` to this render, record the
-     attempt, move to the next shot.
+   - **pass** → set the frame's `status:"solid"`, `image_path` to this render,
+     record the attempt, move to the next frame/shot.
    - **fail** and `attempts < retry_limit` → apply the QA subagent's
      `REVISED_PROMPT` (or, if you disagree, craft a better fix using
      `references/z-image-turbo.md` tactics — reinforce the missed element, repeat
      the anchor verbatim, tighten the cleanliness clause). Follow `SEED_ADVICE`:
      keep the seed for a targeted wording fix, pick a new seed for a
-     composition-level miss. Re-render (back to step 1).
-   - **fail** and `attempts == retry_limit` → set `status:"failed"`, keep the
-     best attempt's image, record why. Do NOT let one stubborn frame stall the
-     whole run.
+     composition-level miss (if you re-seed the 尾帧, prefer re-seeding both frames
+     together so the pair stays coherent). Re-render (back to step 1).
+   - **fail** and `attempts == retry_limit` → set the frame's `status:"failed"`,
+     keep the best attempt's image, record why. Do NOT let one stubborn frame
+     stall the whole run.
 
 4. **Persist.** Update `render-state.json` after every attempt.
 
@@ -186,8 +216,9 @@ When all shots are `solid` or `failed`, summarize for the user:
 - Call out any `failed` shots with the QA reasons and suggest next moves
   (different seed range, simplify the shot, split into two shots, or hand-edit).
 - Point to `render-state.json` and the image directory.
-- Offer first/last-frame prompts (already in the storyboard) if the user wants
-  to take solid frames into image-to-video next.
+- When both frames of a shot are solid, note that the shot is ready for LTX-2.3
+  FLF2V: 首帧 + 尾帧 as the start/end images and the stored `video_prompt`
+  (which carries the 台词/VO). Video generation itself stays out of scope here.
 
 Keep the report concise and skimmable. Show the images inline if the environment
 supports it.
@@ -215,5 +246,7 @@ supports it.
 - `agents/qa-inspect.md` — the per-frame vision-QA subagent prompt.
 - `references/comfyui-api.md` — endpoint details, workflow export, params,
   troubleshooting.
-- `references/z-image-turbo.md` — (in the storyboard-prompt skill) the prompt
-  wording playbook the revision step draws on.
+- `references/z-image-turbo.md` — the Z-Image prompt wording playbook the
+  revision step draws on.
+- `references/ltx2-video.md` — the LTX-2.3 FLF2V video-prompt playbook (dialogue/
+  VO/audio syntax) for the carried-through `video_prompt`.

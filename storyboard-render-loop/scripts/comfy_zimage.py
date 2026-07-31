@@ -58,6 +58,23 @@ TITLE_SAMPLER = {"SAMPLER", "KSAMPLER"}
 TITLE_SAVE = {"SAVE", "SAVE_IMAGE", "OUTPUT"}
 
 
+def sanitize_prompt(text):
+    """Drop sidecar metadata lines that belong to the storyboard doc, not the
+    image prompt. Z-Image Turbo's text encoder reads everything literally, so a
+    stray `建议参数：steps 9｜cfg 0…` or first/last-frame note would be encoded as
+    words (and can render as stray glyphs). Keep only the description paragraph.
+    """
+    prefixes = ("建议参数", "参数建议", "（首帧", "(首帧", "首帧", "尾帧",
+                "首帧：", "尾帧：", "Suggested params", "Params:")
+    kept = []
+    for line in text.splitlines():
+        stripped = line.strip()
+        if any(stripped.startswith(p) for p in prefixes):
+            continue
+        kept.append(line)
+    return "\n".join(kept).strip()
+
+
 def _title(node):
     return (node.get("_meta", {}) or {}).get("title", "") or ""
 
@@ -291,6 +308,7 @@ def main():
     args = ap.parse_args()
 
     seed = args.seed if args.seed is not None else random.randint(0, 2**31 - 1)
+    prompt_text = sanitize_prompt(args.prompt)
 
     def fail(msg, prompt_id=None):
         print(json.dumps({"status": "error", "error": msg,
@@ -308,7 +326,7 @@ def main():
              "ComfyUI 'Workflow -> Export (API)' to get the API format.")
 
     report = patch_workflow(
-        wf, prompt=args.prompt, negative=(args.negative or None), seed=seed,
+        wf, prompt=prompt_text, negative=(args.negative or None), seed=seed,
         steps=args.steps, cfg=args.cfg, width=args.width, height=args.height,
         filename_prefix=args.filename_prefix)
 
