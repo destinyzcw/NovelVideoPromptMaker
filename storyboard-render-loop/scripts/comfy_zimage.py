@@ -64,8 +64,9 @@ def sanitize_prompt(text):
     stray `建议参数：steps 9｜cfg 0…` or first/last-frame note would be encoded as
     words (and can render as stray glyphs). Keep only the description paragraph.
     """
-    prefixes = ("建议参数", "参数建议", "（首帧", "(首帧", "首帧", "尾帧",
-                "首帧：", "尾帧：", "Suggested params", "Params:")
+    prefixes = ("建议参数", "参数建议", "参数（", "参数:", "参数：", "参数",
+                "（首帧", "(首帧", "首帧", "尾帧",
+                "首帧：", "尾帧：", "Suggested params", "Params:", "Parameters")
     kept = []
     for line in text.splitlines():
         stripped = line.strip()

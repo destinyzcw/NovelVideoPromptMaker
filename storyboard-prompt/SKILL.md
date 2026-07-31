@@ -156,7 +156,10 @@ even if you describe motion in English (see the language note in the reference).
 Produce Markdown: a shot-list table per scene, then a block per shot containing the two frame
 prompts and the LTX-2.3 video prompt.
 
-```markdown
+每个提示词都**单独放进一个代码块**，复制代码块内的文字即为要喂给模型的完整提示词；
+参数、说明等一律放在代码块**外**的独立段落，绝不与提示词混在一起。
+
+````markdown
 ## 分镜：第 {集} 集 · {集数}-{场次} {地点}
 
 **画风(style phrase)**：{可直接粘贴的一句话画风}
@@ -167,25 +170,33 @@ prompts and the LTX-2.3 video prompt.
 | 01 | 中景 | 4 | 慢推 | 平视 | 林越推门而入 → 停步，眼神从警惕转为震惊 | 林越：你早就知道了 | 林越/门厅 |
 
 ### 镜号 01
-**首帧 (start) — Z-Image Turbo 提示词**
+
+**首帧 (start) — Z-Image Turbo 提示词**（复制下面代码块内的文字进 CLIPTextEncode）
+```
 {完整自然语言提示词：景别机位+主体+锚点短语+动作起点+环境+光线+氛围+画风+约束}
-建议参数：steps 9｜cfg 0｜1024×1024｜固定seed=<S>
+```
+参数（不进提示词，设在 KSampler / 空 latent 节点）：steps 9｜cfg 0｜1024×1024｜固定seed=<S>
 
-**尾帧 (end) — Z-Image Turbo 提示词**
+**尾帧 (end) — Z-Image Turbo 提示词**（复制下面代码块内的文字进 CLIPTextEncode）
+```
 {完整自然语言提示词：与首帧逐字相同，只改动作/表情阶段（与必要的构图位移）}
-建议参数：steps 9｜cfg 0｜1024×1024｜固定seed=<S>
+```
+参数（不进提示词，设在 KSampler / 空 latent 节点）：steps 9｜cfg 0｜1024×1024｜固定seed=<S>
 
-**LTX-2.3 视频提示词 (FLF2V, 首帧→尾帧，含台词/旁白)**
+**LTX-2.3 视频提示词 (FLF2V, 首帧→尾帧，含台词/旁白)**（整段喂给 LTX-2.3，绝不喂 Z-Image）
+```
 {一段现在时连续段落：运镜 + 主体运动 + 环境运动 + 台词（带说话人与语气，引号内逐字保留）
  + VO/旁白 + 环境音/音效 + 节奏时长 + 画面无字幕水印的约束}
 ```
+````
 
-> **只有两段「首帧/尾帧」提示词进入 Z-Image 的 CLIPTextEncode。** `建议参数` 是给采样器的
-> （steps/cfg/尺寸/seed 在 KSampler / 空 latent 节点设置，不是靠文字），`LTX-2.3 视频提示词`
-> 是给 LTX-2.3 视频模型的、绝不喂给 Z-Image。Z-Image 的文本编码器（Qwen3-4B）会把提示词里的
-> 一切当作字面文字编码，且 CFG≈0、无负向提示可抑制，一旦把 `建议参数` 或运镜/台词描述留在
-> 图像提示词里，可能被当成要画的文字/数字渲染进画面（与「无文字」冲突）。务必分行、分开传递。
-> 首帧与尾帧用**同一个 seed**，以保证是同一镜头的两个瞬间；LTX-2.3 用这两帧作首/尾帧插值。
+> **代码块里的文字就是提示词本体，代码块外的一切都不是提示词。** 三个代码块各自独立：
+> 两段「首帧/尾帧」进 Z-Image 的 CLIPTextEncode，`LTX-2.3 视频提示词`整段喂给 LTX-2.3 视频
+> 模型、绝不喂 Z-Image。`参数`行（steps/cfg/尺寸/seed）设在 KSampler / 空 latent 节点，不是
+> 靠文字，所以放在代码块外。Z-Image 的文本编码器（Qwen3-4B）会把提示词里的一切当作字面文字
+> 编码，且 CFG≈0、无负向提示可抑制，一旦把参数或运镜/台词描述混进图像提示词，可能被当成要画
+> 的文字/数字渲染进画面（与「无文字」冲突）。首帧与尾帧用**同一个 seed**，以保证是同一镜头的
+> 两个瞬间；LTX-2.3 用这两帧作首/尾帧插值。
 
 ## Consistency rules (why they matter)
 

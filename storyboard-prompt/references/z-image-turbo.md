@@ -70,7 +70,8 @@ Z-Image responds best to a clear, layered order. Compose each shot's prompt as:
 
 ## 5. Recommended ComfyUI parameters
 
-Put these as a short `建议参数` line under each prompt (or once per scene if uniform):
+Keep the prompt paragraph inside its own code block and put these as a separate `参数（不进提示词）`
+line **outside** the code block (they go on KSampler / empty-latent nodes, never into the text):
 
 - **steps**: 8–12 (native ≈ 8; raise only if you see noise)
 - **cfg / guidance**: 0–1 (base Turbo uses 0; some ComfyUI wrappers expect 1)
@@ -89,8 +90,8 @@ Put these as a short `建议参数` line under each prompt (or once per scene if
 他嘴角带血，雨水混着尘土划过脸颊，眼神由不甘转为坚定，指节发白地攥紧怀中一枚巴掌大的
 残破玉简（边缘焦黑、暗金云纹）。背景为断魂崖夜色，冷调月光自侧后方勾出轮廓，浅景深虚化
 崖雾。国风水墨与写实结合、冷色调、电影质感、胶片颗粒。画面干净，无文字、无水印、无多余人物。
-建议参数：steps 9｜cfg 0｜1024×1024｜固定seed。
 ```
+参数（不进提示词）：steps 9｜cfg 0｜1024×1024｜固定seed。
 
 ### Wide establishing action (远景 / 俯视)
 
@@ -99,12 +100,12 @@ Put these as a short `建议参数` line under each prompt (or once per scene if
 两名身影在崖边对峙——一名清瘦少年（短束发、粗布弟子服、左眉细疤）被击退到崖边，
 一名白衣青年负手逼近，神情轻蔑。人物在环境中显得渺小，宿命压迫感。国风水墨与写实结合、
 冷色调、高反差夜景、体积雾光、电影构图。画面干净，无文字、无水印、无杂乱背景。
-建议参数：steps 10｜cfg 0｜1280×720｜固定seed。
 ```
+参数（不进提示词）：steps 10｜cfg 0｜1280×720｜固定seed。
 
 Note how each prompt is one flowing paragraph, embeds the fixed anchor phrases for identity,
 puts lighting in its own clause, and ends with the constraint line — no reference images, no
-negative prompt.
+negative prompt. The `参数` line always lives **outside** the code block.
 
 ## 7. First/last-frame pairs + the motion prompt
 
@@ -113,26 +114,34 @@ Each shot yields **two** Z-Image prompts (首帧 + 尾帧) and one motion prompt
 **How to write the pair.** Keep the two frame prompts **byte-for-byte identical except the
 action/expression clause** (and, if the camera moves, the framing clause). Same anchors, same
 environment, same lighting, same style, same constraints, and the **same seed** — so the two
-stills read as one shot at two instants and interpolate cleanly.
+stills read as one shot at two instants and interpolate cleanly. Each prompt goes in its own
+code block; the `参数` line stays **outside** so it can never be pasted into CLIPTextEncode.
+
+首帧 (start) — 抬腿发力前一刻：
 
 ```text
-# 首帧 (start) — 抬腿发力前一刻
 电影感全景侧面平视，二十岁左右白衣青年，身形修长，玉冠束发，眉眼锋利，银纹宗门长袍，
 冷笑抬腿正欲踹出，脚尚未触及身前踉跄的约十六岁少年，清瘦，短束发，粗布外门弟子服，
 左眉有细疤；断魂崖，陡峭黑岩断崖，崖边一株枯树，崖下深不见底的冷雾，碎石在脚边松动。
 冷调月光侧逆光拉出两人轮廓，体积雾光切开深蓝夜色。国风水墨与写实结合、冷色调、高反差
 夜景、电影构图。画面干净，无文字、无水印、无多余人物，正确的手部与肢体结构。
-建议参数：steps 10｜cfg 0｜1280×720｜固定seed=4477
+```
+参数（不进提示词）：steps 10｜cfg 0｜1280×720｜固定seed=4477
 
-# 尾帧 (end) — 踹中、少年越过崖线（仅动作阶段变化）
+尾帧 (end) — 踹中、少年越过崖线（仅动作阶段变化）：
+
+```text
 电影感全景侧面平视，二十岁左右白衣青年，身形修长，玉冠束发，眉眼锋利，银纹宗门长袍，
 收势的一脚已踹中约十六岁少年，清瘦，短束发，粗布外门弟子服，左眉有细疤，少年身体后弓、
 双脚离地、正越过悬崖边线坠出；断魂崖，陡峭黑岩断崖，崖边一株枯树，崖下深不见底的冷雾，
 碎石被踢飞。冷调月光侧逆光拉出两人轮廓，体积雾光切开深蓝夜色。国风水墨与写实结合、
 冷色调、高反差夜景、电影构图。画面干净，无文字、无水印、无多余人物，正确的手部与肢体结构。
-建议参数：steps 10｜cfg 0｜1280×720｜固定seed=4477
+```
+参数（不进提示词）：steps 10｜cfg 0｜1280×720｜固定seed=4477
 
-# 运镜/转场 (video, 首帧→尾帧) — 交给视频模型，不喂给 Z-Image
+运镜/转场 (video, 首帧→尾帧) — 交给视频模型（LTX-2.3，见 `ltx2-video.md`），不喂给 Z-Image：
+
+```text
 镜头侧面横移轻微跟随，节奏由蓄力的短暂停顿转为爆发：白衣青年抬腿、发力、一脚踹出；
 少年被踹得后弓、双脚离地、越过崖线向崖外坠出。狂风骤起掀动两人衣袂与少年乱发，
 碎石与墨色尘土被踢飞、向崖下卷落，体积雾光随动作翻涌。约 4 秒，前段紧绷、后段急促失重。
