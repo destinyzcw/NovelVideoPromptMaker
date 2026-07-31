@@ -117,6 +117,55 @@ needed.
    (the `patch_report` should be all `true`).
 4. Ask the agent to "render the storyboard for this novel excerpt" — it runs stages 1→3.
 
+## Setup — exposing ComfyUI on the LAN (one-time, manual)
+
+The ComfyUI server runs on a **separate GPU box** (e.g. a Windows machine) and the
+agent/client runs elsewhere (e.g. a Mac) on the same network. These are manual steps
+you run **on the GPU box** — they are not performed by any skill.
+
+By default ComfyUI binds to `127.0.0.1`, so only that machine can reach it. To share it:
+
+**On the Windows box that runs ComfyUI (models live here):**
+
+1. Start ComfyUI listening on all interfaces:
+
+   ```powershell
+   # portable build
+   .\python_embeded\python.exe -s ComfyUI\main.py --listen 0.0.0.0 --port 8188
+   # or add `--listen 0.0.0.0` to the launch line inside run_nvidia_gpu.bat
+   ```
+
+2. Open the firewall port (PowerShell **as Administrator**); the active network
+   profile must be Private (Public blocks inbound by default):
+
+   ```powershell
+   New-NetFirewallRule -DisplayName "ComfyUI 8188" -Direction Inbound `
+     -Action Allow -Protocol TCP -LocalPort 8188 -Profile Private
+   Get-NetConnectionProfile   # confirm NetworkCategory = Private
+   ```
+
+3. Find the box's LAN IP:
+
+   ```powershell
+   (Get-NetIPAddress -AddressFamily IPv4 |
+     Where-Object {$_.IPAddress -like "192.168.*" -or $_.IPAddress -like "10.*"}).IPAddress
+   ```
+
+**From the device that runs the agent/client (e.g. Mac) on the same LAN:**
+
+```bash
+curl http://192.168.1.50:8188/system_stats     # JSON back = reachable
+export COMFYUI_HOST=http://192.168.1.50:8188
+```
+
+Gotchas:
+- Both devices must be on the **same subnet** (same router/Wi-Fi; guest networks
+  and AP/client isolation block peer traffic).
+- Sanity-check locally first: on the Windows box, `curl http://<its-ip>:8188/system_stats`.
+  If that fails, ComfyUI isn't bound to `0.0.0.0` (you missed `--listen`).
+- **No auth**: ComfyUI has no authentication. Only expose it on a trusted LAN;
+  never port-forward it to the public internet.
+
 ## Examples
 
 `examples/` contains the exact prompts used to validate the writing skills and the Markdown
