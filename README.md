@@ -1,183 +1,129 @@
 # NovelVideoPromptMaker
 
-An **agent skill** that turns novels and long-form prose into
-[LTX-2.3 (LTX-2)](https://wiki.drawthings.ai/wiki/LTX-2) text-to-video prompts —
-one prompt per short clip — organized so every clip maps back to the chapter and
-passage it came from, for easy review and regeneration.
+Agent **skills** for the story → screen pipeline: turn a story into a structured
+screenplay (剧本), turn each scene into a shot list plus ready-to-use image prompts for
+storyboard frames (分镜图), and — optionally — **render those frames on a ComfyUI
+Z-Image Turbo endpoint and self-correct them in an agentic loop**. The first two skills
+encode *workflow, reasoning discipline, and loop control* and stay backend-agnostic; the
+third wires them to an actual image backend and adds a vision-QA retry loop.
 
-This is a *skill*, not a standalone pipeline: an AI agent reads it and does the
-creative segmentation and prompt writing itself. The bundled scripts handle the
-deterministic parts (splitting chapters, saving output, validating).
+The approach is distilled from the multi-agent prompt design of
+[Stonewuu/ai-fusion-video](https://github.com/Stonewuu/ai-fusion-video) (融光), reframed as
+standalone skills and stripped of that project's built-in image/video generation machinery.
+
+## Skills
+
+| Skill | Stage | Input | Output |
+|-------|-------|-------|--------|
+| [`screenplay-writer`](screenplay-writer/SKILL.md) | 1 — 剧本 | Story synopsis/outline, or existing prose | Markdown screenplay: episodes → scenes → dialogue |
+| [`storyboard-prompt`](storyboard-prompt/SKILL.md) | 2 — 分镜图 prompt | A screenplay scene + visual assets | Shot-list table + a natural-language image prompt per shot |
+| [`storyboard-render-loop`](storyboard-render-loop/SKILL.md) | 3 — render + QA | A novel excerpt (orchestrates 1+2) + a ComfyUI endpoint | Rendered storyboard PNGs, vision-QA'd and retried, plus a state manifest |
+
+They chain: `screenplay-writer` output feeds `storyboard-prompt`; `storyboard-render-loop`
+orchestrates both and then renders.
+
+```
+story / prose ──▶ screenplay-writer ──▶ 剧本 (scenes+dialogue)
+                                            │
+                                            ▼
+                       storyboard-prompt ──▶ 分镜脚本 + 分镜图 prompts
+                                            │
+                                            ▼
+                  storyboard-render-loop ──▶ ComfyUI Z-Image Turbo ──▶ frames ──▶ vision QA ──▶ revise/retry
+```
+
+### screenplay-writer (剧本)
+- Two modes: **generate from outline** (invent scenes faithful to the synopsis) and
+  **adapt existing prose** (restructure only what's written — never fabricate later events).
+- Three-pass loop: story bible (characters/scenes/props) → episode plan (per-episode
+  concept) → scenes & dialogue, processing **every** planned episode without skipping.
+- Conventions: `集数-场次 地点 时间内外景` headings, `▲` action, `VO`/`OS`, `【】` camera
+  cues, `角色名：台词` dialogue, and strict naming consistency.
+
+### storyboard-prompt (分镜图 prompt)
+- Establishes the visual bible first (a reusable **style phrase** + per-entity **anchor phrases**),
+  deciding which appearance changes need a separate anchor vs. words.
+- Shot design driven by drama: 正反打 for dialogue, 跟拍/手持 for action, 特写+慢推 for
+  emotion; per shot picks 景别 / 时长 / 运镜 / 机位 / 画面描述 / 对白.
+- Composes each image prompt for the project's default backend — **Z-Image Turbo (Tongyi-MAI)
+  in ComfyUI**: long natural-language prompts, identity carried by verbatim anchor phrases (the
+  base model is text-to-image with no reference-image input), exclusions baked into the positive
+  prompt (negative prompts are ignored / CFG=0), lighting as its own clause, and suggested ComfyUI
+  parameters — **without calling any model.** A general reference-image playbook is included for
+  other backends, plus optional first/last-frame variants for a separate video model.
+
+### storyboard-render-loop (novel → rendered frames)
+- **Orchestrator** that runs the two skills above on a novel excerpt, then renders every shot
+  on a **remote ComfyUI Z-Image Turbo** box over HTTP and self-corrects.
+- **Serial, closed loop per shot**: render → a vision subagent inspects the frame against its
+  画面描述 + anchors → pass, or revise the prompt (using Z-Image tactics) and retry until solid
+  or the retry limit (default 3) is hit.
+- Keeps a resumable `render-state.json` manifest (prompt, seed, attempts, verdict per shot),
+  fails loudly on endpoint/config errors, and produces a final status report.
+- Ships a **stdlib-only** ComfyUI client (`scripts/comfy_zimage.py`), a default API workflow
+  (`scripts/zimage_workflow.api.json`), and a QA subagent prompt (`agents/qa-inspect.md`).
+  The ComfyUI server runs on a separate GPU box on your LAN — set `COMFYUI_HOST`.
 
 ## Layout
 
 ```
-SKILL.md                       # the agent's instructions (start here)
-references/
-  ltx2-prompt-guide.md         # distilled LTX-2.3 prompt-writing rulebook (+ verbatim ltx.io golden rules)
-  ltx2-official-examples.md    # all 11 verbatim ltx.io example prompts + derived authoring checklist
-  ltx2-usage-notes.md          # deep-research findings: model facts, prompt rules, failure fixes, CJK caveat
-scripts/
-  split_chapters.py            # novel.txt -> one flat chapter-NNN.json per chapter + manifest
-  save_scenes.py               # persist a chapter's scenes into its chapter-NNN.json file
-  validate.py                  # check prompts + chapter-to-clip mapping integrity
-  render_videos.py             # drive draw-things-cli to render each scene into an LTX-2.3 clip (with audio)
-examples/
-  the-lantern-road.txt         # tiny English sample novel
-  shan-zhong-ye-xing.zh.txt    # Chinese sample (第1章 / 第2章)
-  hai-bian-de-xin.zh.txt       # Chinese sample (第一章 / 第二章, kanji numerals)
-  yuki-no-eki.ja.txt           # Japanese sample (第一話 / 第二話)
-  example-output/              # committed generated projects (EN + ZH + JA), incl. cast sheets
-evals/
-  evals.json                   # test prompts for the skill (English + Chinese + Japanese)
+NovelVideoPromptMaker/
+├── README.md
+├── screenplay-writer/
+│   ├── SKILL.md
+│   └── references/conventions.md          # deep conventions, edge cases, examples
+├── storyboard-prompt/
+│   ├── SKILL.md
+│   └── references/
+│       ├── z-image-turbo.md               # DEFAULT backend: Z-Image Turbo in ComfyUI
+│       └── prompt-composition.md          # general playbook for reference-capable backends
+├── storyboard-render-loop/
+│   ├── SKILL.md
+│   ├── scripts/
+│   │   ├── comfy_zimage.py                 # stdlib-only ComfyUI client (patch/submit/poll/download)
+│   │   └── zimage_workflow.api.json        # default API-format Z-Image Turbo workflow
+│   ├── agents/qa-inspect.md                # per-frame vision-QA subagent prompt
+│   ├── references/
+│   │   ├── comfyui-api.md                  # endpoints, workflow export, params, troubleshooting
+│   │   └── z-image-turbo.md               # prompt playbook (shared with storyboard-prompt)
+│   └── .env.example                        # COMFYUI_HOST for the remote GPU box
+└── examples/                               # real test input/output
+    ├── screenplay-writer/{input,output}.md
+    └── storyboard-prompt/{input,output}.md
 ```
 
-## Plan each chapter as a whole
+## Installation
 
-The agent reads a whole chapter before writing anything and plans it as a unit: it builds
-a **cast sheet** (each character with a fixed visual description) and a scene arc, then
-writes all of the chapter's scene prompts together, restating each character's canonical
-look **verbatim** in every prompt they appear in. Planning holistically — and reusing the
-identical anchor phrases rather than paraphrasing them — is what keeps characters,
-settings, and continuity consistent from clip to clip (paraphrasing or dropping a
-character's description is what makes hair and clothing drift). The cast sheet is persisted
-project-wide in `characters.json` so later chapters reuse the same looks.
+These are portable agent skills (a `SKILL.md` with YAML frontmatter + optional
+`references/`, `scripts/`, `agents/`). To make them available to an agent that discovers
+skills from a directory, copy or symlink the skill folders into your skills directory, e.g.:
 
-## Match the novel's language
-
-Prompts are written in the **same language as the source novel** — a Chinese novel gets
-Chinese prompts, a Japanese novel Japanese prompts — so voice, tone, and cultural detail
-stay consistent. The LTX-2.3 element ordering and mandatory audio layer are the same in
-every language; only the words change.
-
-## Quick manual run
-
-```bash
-python scripts/split_chapters.py examples/the-lantern-road.txt --out output
-# (agent reads each chapter's source_text from chapter-NNN.json and writes the scenes back)
-python scripts/save_scenes.py --project output/the-lantern-road --chapter 1 --scenes scenes.json
-python scripts/validate.py --project output/the-lantern-road
-# optional: render each scene to an LTX-2.3 clip (audio + dialogue) via draw-things-cli
-python scripts/render_videos.py --project output/the-lantern-road --model <ltx-2.ckpt> --dry-run
+```powershell
+Copy-Item -Recurse .\screenplay-writer      "$env:USERPROFILE\.agents\skills\"
+Copy-Item -Recurse .\storyboard-prompt      "$env:USERPROFILE\.agents\skills\"
+Copy-Item -Recurse .\storyboard-render-loop "$env:USERPROFILE\.agents\skills\"
 ```
 
-No third-party dependencies for the core scripts — Python 3.8+ standard library only.
-`render_videos.py` additionally needs the `draw-things-cli` binary (and `ffmpeg` for
-continuation chaining) on the machine where Draw Things' models live.
+The agent loads only a skill's name + description until a matching task triggers it, then
+reads the `SKILL.md` body, and finally pulls in a `references/` file or `scripts/` only when
+needed.
 
-## Chaining long sequences (clip continuation)
+### Using the render loop
 
-LTX-2.3 tops out at ~10–20 s per generation, so a continuous stretch of story is rendered
-as several short clips. For a seamless seam, mark the continuing scene `continuation: true`
-and give the feeding scene an `end_state` (its final-frame framing/pose/lighting); the
-continuation prompt then opens from that state and describes only the onward motion.
-**DrawThings chains the clips for you**: render the run in order and start each continuation
-scene from the previous clip's **last frame** (its native image-to-video / "use last frame"
-option), so the character's look carries over pixel-for-pixel. `render_videos.py` automates
-this seam by extracting the previous clip's last frame with ffmpeg (see *Rendering to video*
-below); in the DrawThings app UI it's built in, with no manual frame-extraction step.
+1. Deploy ComfyUI with Z-Image Turbo on a GPU box on your LAN (models: `qwen_3_4b`,
+   `z_image_turbo_bf16`, `ae` — see `storyboard-render-loop/references/comfyui-api.md`).
+2. Set the endpoint: copy `.env.example` and set `COMFYUI_HOST=http://<gpu-box>:8188`.
+3. Verify targeting once: `python scripts/comfy_zimage.py --prompt "…" --out t.png --dry-run`
+   (the `patch_report` should be all `true`).
+4. Ask the agent to "render the storyboard for this novel excerpt" — it runs stages 1→3.
 
-`validate.py` flags a `continuation` scene whose predecessor has no `end_state`.
+## Examples
 
-## Rendering to video
+`examples/` contains the exact prompts used to validate the writing skills and the Markdown
+they produced. The two examples share the 断魂崖 beat, demonstrating the screenplay →
+storyboard handoff end to end.
 
-`scripts/render_videos.py` turns a validated project's scene prompts into actual LTX-2.3
-video clips — with **synchronized audio and spoken dialogue** — by driving the
-**Draw Things CLI** (`draw-things-cli generate`). Run it on the machine where Draw Things'
-models live (e.g. your Mac):
+## Provenance & license
 
-```bash
-# preview the exact commands without generating anything:
-python scripts/render_videos.py --project output/<novel-slug> --model <ltx-2.ckpt> --dry-run
-
-# render the whole project (skips clips already rendered):
-python scripts/render_videos.py --project output/<novel-slug> --model <ltx-2.ckpt>
-
-# sanity-check settings on one chapter / first N clips first:
-python scripts/render_videos.py --project output/<novel-slug> --model <ltx-2.ckpt> --chapter 1 --limit 2
-```
-
-Output lands in `output/<novel-slug>/videos/chNNN-sceneMM.mp4` alongside a
-`render-manifest.json` recording what was rendered (with the exact command per clip).
-
-**Why the CLI and not the HTTP API.** Draw Things' HTTP API (`/sdapi/v1/txt2img`) returns
-only image **frames** in its JSON `images` array — it carries **no audio track**. Since this
-skill embeds a spoken line in (nearly) every prompt, rendering over HTTP would silently drop
-all dialogue and ambient audio. `draw-things-cli generate` retrieves the model's audio
-alongside the frames and muxes them into a real `.mp4`/`.mov`, so it's the correct path.
-
-**Frame count & size.** Each scene's `suggested_duration_seconds` is converted to
-`frames = round(duration × fps)` (fps 24 by default) and snapped to LTX-2.3's required
-`8k+1` count, capped at 201 (the model maximum, ~8 s). Size comes from a `--resolution`
-preset (`720p`, `720p-portrait`, `1080p`, `1080p-portrait`, `512`) or explicit
-`--width/--height`, snapped to multiples of 64.
-
-**Continuation chaining is automatic.** For each `continuation: true` scene the script
-extracts the previous clip's last frame (via ffmpeg) and feeds it to the CLI as the
-image-to-video start image (`--image`, at `--continuation-strength`), carrying the
-character's look across the seam. Without ffmpeg installed, those scenes fall back to plain
-text-to-video and a warning is printed.
-
-**Useful flags:** `--dry-run` (print commands only), `--chapter N` / `--scene I` / `--limit N`
-(subset), `--overwrite` (re-render existing clips; default is skip), `--steps` / `--cfg` /
-`--fps` (override the manifest defaults), `--no-negative` (for distilled models run at
-cfg ~1.0), `--container mov` (ProRes), `--seed`, and `--cli` / `--ffmpeg` / `--models-dir`
-to point at non-default binaries or model directories. Everything after `--extra` is passed
-verbatim to `draw-things-cli`.
-
-**Requirements:** the `draw-things-cli` binary
-(`brew install --HEAD drawthingsai/draw-things/draw-things-cli`) and, for continuation
-chaining, `ffmpeg`. The script itself is Python 3.8+ standard library only.
-
-## Spoken dialogue
-
-LTX-2.3 generates speech and lip-sync in the same pass, so a character speaks a line by
-having that line written **verbatim in quotes inside the prompt** (in the novel's own
-language) — that quoted text is what the model voices. There is **no separate dialogue
-input**. Aim to give (nearly) every scene a spoken line; `save_scenes.py` and
-`validate.py` report **dialogue coverage** (how many scenes have speech) so you can push it
-high. Scenes also carry a structured `dialogue` array (`{"speaker", "line"}`) — this is
-**internal metadata in the chapter JSON, not a separate deliverable**; `save_scenes.py` uses it
-only to auto-weave any line you forgot to embed and to warn when a line is too long to fit
-the clip (estimated at ~2.5 English words or ~5 CJK characters per second). See the
-Japanese and Chinese projects under `examples/example-output/` for worked examples with
-native-language prompts and dialogue in every scene.
-
-## Negative prompts: author one per scene, in the scene's language
-
-Each scene's `negative_prompt` is **authored by the agent** — the scripts never translate.
-Two rules: (1) write it in the **same language as the `prompt`** (Chinese prompt → Chinese
-negative, Japanese → Japanese, English → English); (2) **tailor it to the scene** — a small
-shared core (on-screen text, subtitles, watermark, warped hands, extra people) plus
-scene-specific exclusions (e.g. `bright sunlight` for a night scene, `calm still water` for
-a rapids scene). If you omit it, `save_scenes.py` fills a generic **English** fallback for
-English prompts only; for a CJK prompt it stays empty and both `save_scenes.py` and
-`validate.py` warn you to author a localized one. An English negative on a CJK prompt is
-also flagged. See the worked examples under `examples/example-output/` — every scene has a
-distinct, native-language negative.
-
-## Audio: weave sound through the action, not in a trailing bracket
-
-LTX-2.3 generates video and audio in one pass, so every prompt needs 3–5 sound cues — but
-**thread each sound into the sentence describing the beat it accompanies** rather than
-dumping them all in one bracket at the end. A trailing catch-all group (a final
-`【风、脚步、鸦啼】` appended after the action) is largely ignored by the model, so ambient
-audio parked there never reaches the video. Attach the wind to the moment it blows, the
-footsteps to the step, the accent to its beat; a short inline `[sound]` / `【声】` group
-beside its own beat mid-paragraph is fine.
-
-## Output: one flat file per chapter
-
-Each chapter produces a single consolidated **`chapter-NNN-<slug>.json`** — it carries the
-verbatim `source_text`, the chapter's cast, and every scene's positive prompt, localized
-negative prompt, duration, and continuity fields. There are no per-chapter folders and no
-separate `source.txt`, `chapter.json`, or `prompts.md`. This one file is both the
-deliverable you paste prompts from **and** the machine-readable record that `validate.py`
-and regeneration use.
-
-## How output maps back to the novel
-
-Each clip is addressable by **chapter number + scene index**, and every scene stores
-the verbatim `source_excerpt` it depicts. To regenerate a clip you didn't like, edit
-that chapter's `chapter-NNN.json` (or ask the agent to) and re-run `save_scenes.py` for the
-chapter. `validate.py` flags any scene whose excerpt no longer maps to its chapter.
+Design adapted from the agent prompts of `Stonewuu/ai-fusion-video` (MIT). This repository
+contains original skill text and does not redistribute that project's code.

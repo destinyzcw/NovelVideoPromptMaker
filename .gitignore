@@ -1,12 +1,11 @@
+# Local ComfyUI endpoint config
+.env
+
+# Render loop outputs
+renders/
+**/render-state.json
+*.png
+
+# Python
 __pycache__/
 *.pyc
-.venv/
-venv/
-
-# Generated prompt output (novel-specific, keep out of the skill repo)
-output/
-
-# Rendered video clips (large binaries; regenerate from the prompts)
-videos/
-*.mp4
-*.mov

@@ -1,0 +1,82 @@
+{
+  "28": {
+    "class_type": "UNETLoader",
+    "_meta": {"title": "UNETLoader"},
+    "inputs": {
+      "unet_name": "z_image_turbo_bf16.safetensors",
+      "weight_dtype": "default"
+    }
+  },
+  "30": {
+    "class_type": "CLIPLoader",
+    "_meta": {"title": "CLIPLoader"},
+    "inputs": {
+      "clip_name": "qwen_3_4b.safetensors",
+      "type": "lumina2",
+      "device": "default"
+    }
+  },
+  "29": {
+    "class_type": "VAELoader",
+    "_meta": {"title": "VAELoader"},
+    "inputs": {
+      "vae_name": "ae.safetensors"
+    }
+  },
+  "27": {
+    "class_type": "CLIPTextEncode",
+    "_meta": {"title": "POSITIVE_PROMPT"},
+    "inputs": {
+      "clip": ["30", 0],
+      "text": "PLACEHOLDER_POSITIVE_PROMPT"
+    }
+  },
+  "33": {
+    "class_type": "ConditioningZeroOut",
+    "_meta": {"title": "NEGATIVE_ZEROED"},
+    "inputs": {
+      "conditioning": ["27", 0]
+    }
+  },
+  "13": {
+    "class_type": "EmptySD3LatentImage",
+    "_meta": {"title": "LATENT_IMAGE"},
+    "inputs": {
+      "width": 1024,
+      "height": 1024,
+      "batch_size": 1
+    }
+  },
+  "3": {
+    "class_type": "KSampler",
+    "_meta": {"title": "SAMPLER"},
+    "inputs": {
+      "model": ["28", 0],
+      "positive": ["27", 0],
+      "negative": ["33", 0],
+      "latent_image": ["13", 0],
+      "seed": 0,
+      "steps": 8,
+      "cfg": 1.0,
+      "sampler_name": "euler",
+      "scheduler": "simple",
+      "denoise": 1.0
+    }
+  },
+  "8": {
+    "class_type": "VAEDecode",
+    "_meta": {"title": "VAEDecode"},
+    "inputs": {
+      "samples": ["3", 0],
+      "vae": ["29", 0]
+    }
+  },
+  "9": {
+    "class_type": "SaveImage",
+    "_meta": {"title": "SAVE_IMAGE"},
+    "inputs": {
+      "images": ["8", 0],
+      "filename_prefix": "storyboard"
+    }
+  }
+}
