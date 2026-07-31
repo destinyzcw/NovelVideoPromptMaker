@@ -4,6 +4,52 @@ The render loop talks to ComfyUI over its HTTP API. The ComfyUI server usually
 runs on a **separate GPU box on the same LAN** — you do not run it on the agent
 machine. Set `COMFYUI_HOST` to that box, e.g. `http://192.168.1.50:8188`.
 
+## Exposing ComfyUI on the LAN
+
+By default ComfyUI binds to `127.0.0.1`, so only the machine it runs on can
+reach it. To let another device on the same network (e.g. a Mac) use it:
+
+**On the Windows box that runs ComfyUI (models live here):**
+
+1. Start ComfyUI listening on all interfaces:
+
+   ```powershell
+   # portable build
+   .\python_embeded\python.exe -s ComfyUI\main.py --listen 0.0.0.0 --port 8188
+   # or add `--listen 0.0.0.0` to the launch line inside run_nvidia_gpu.bat
+   ```
+
+2. Open the firewall port (PowerShell **as Administrator**), and make sure the
+   network profile is Private (Public blocks inbound by default):
+
+   ```powershell
+   New-NetFirewallRule -DisplayName "ComfyUI 8188" -Direction Inbound `
+     -Action Allow -Protocol TCP -LocalPort 8188 -Profile Private
+   Get-NetConnectionProfile   # confirm NetworkCategory = Private
+   ```
+
+3. Find the box's LAN IP:
+
+   ```powershell
+   (Get-NetIPAddress -AddressFamily IPv4 |
+     Where-Object {$_.IPAddress -like "192.168.*" -or $_.IPAddress -like "10.*"}).IPAddress
+   ```
+
+**From the other device (e.g. Mac) on the same LAN:**
+
+```bash
+curl http://192.168.1.50:8188/system_stats     # JSON back = reachable
+export COMFYUI_HOST=http://192.168.1.50:8188
+```
+
+Gotchas:
+- Both devices must be on the **same subnet** (same router/Wi-Fi; guest networks
+  and AP/client isolation block peer traffic).
+- Sanity-check locally first: on the Windows box, `curl http://<its-ip>:8188/system_stats`.
+  If that fails, ComfyUI isn't bound to `0.0.0.0` (you missed `--listen`).
+- **No auth**: ComfyUI has no authentication. Only expose it on a trusted LAN;
+  never port-forward it to the public internet.
+
 ## Endpoints used
 
 | Method | Path | Purpose |
