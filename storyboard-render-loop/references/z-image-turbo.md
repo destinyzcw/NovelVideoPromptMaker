@@ -11,7 +11,7 @@ specifically. Read this whenever you generate 分镜图 prompts intended for Z-I
 4. Prompt scaffold (layered)
 5. Recommended ComfyUI parameters
 6. Worked examples (Chinese, storyboard shots)
-7. First/last-frame pairs + the motion prompt
+7. Keyframe chain + per-segment motion prompts
 8. Scene complexity — budget, split, and bind
 
 ## 1. What makes Z-Image Turbo different
@@ -109,20 +109,28 @@ Note how each prompt is one flowing paragraph, embeds the fixed anchor phrases f
 puts lighting in its own clause, and ends with the constraint line — no reference images, no
 negative prompt. The `参数` line always lives **outside** the code block.
 
-## 7. First/last-frame pairs + the motion prompt
+## 7. Keyframe chain + per-segment motion prompts
 
-Each shot yields **two** Z-Image prompts (首帧 + 尾帧) and one motion prompt for a video model.
+Each shot yields a **keyframe chain** of Z-Image prompts `K0 → K1 → … → Kn`
+(首帧=K0, 尾帧=Kn) plus **one motion prompt per adjacent pair** for the video model.
+A shot is *not* a single 首帧/尾帧 pair: FLF2V interpolates cleanly only across a
+**small** delta, so any big motion (a fall, a body flung across frame, a large
+camera move, a full pose swap) gets an **intermediate keyframe** inserted, and each
+`Ki → Ki+1` becomes one short clip. Simple/near-static shots stay 2 keyframes = 1 clip.
 
-**How to write the pair.** Keep the two frame prompts **byte-for-byte identical except the
-action/expression clause** (and, if the camera moves, the framing clause). Same anchors, same
-environment, same lighting, same style, same constraints, and the **same seed** — so the two
-stills read as one shot at two instants and interpolate cleanly. Each prompt goes in its own
-code block; the `参数` line stays **outside** so it can never be pasted into CLIPTextEncode.
+**How to write the chain.** Keep every keyframe prompt **byte-for-byte identical
+except the action/expression clause** (and the framing clause if the camera moves in
+that gap). Same anchors, same environment, same lighting, same style, same
+constraints, and **one shared seed for the whole chain** — so the stills read as one
+continuous shot and interpolate cleanly. A **shared boundary frame Ki is rendered
+once** and reused as the end of clip i-1 and the start of clip i; never reword it
+between the two clips it joins. Each prompt goes in its own code block; the `参数`
+line stays **outside** so it can never be pasted into CLIPTextEncode.
 
-首帧 (start) — 抬腿发力前一刻：
+K0 (首帧) — 抬腿发力前一刻：
 
 ```text
-电影感全景侧面平视，二十岁左右白衣青年，身形修长，玉冠束发，眉眼锋利，银纹宗门长袍，
+电影感中近景侧面平视，二十岁左右白衣青年，身形修长，玉冠束发，眉眼锋利，银纹宗门长袍，
 冷笑抬腿正欲踹出，脚尚未触及身前踉跄的约十六岁少年，清瘦，短束发，粗布外门弟子服，
 左眉有细疤；断魂崖，陡峭黑岩断崖，崖边一株枯树，崖下深不见底的冷雾，碎石在脚边松动。
 冷调月光侧逆光拉出两人轮廓，体积雾光切开深蓝夜色。国风水墨与写实结合、冷色调、高反差
@@ -130,31 +138,49 @@ code block; the `参数` line stays **outside** so it can never be pasted into C
 ```
 参数（不进提示词）：steps 10｜cfg 0｜1280×720｜固定seed=4477
 
-尾帧 (end) — 踹中、少年越过崖线（仅动作阶段变化）：
+K1 (中间关键帧) — 踹实、少年双脚离地但尚未越崖（仅动作阶段变化）：
 
 ```text
-电影感全景侧面平视，二十岁左右白衣青年，身形修长，玉冠束发，眉眼锋利，银纹宗门长袍，
-收势的一脚已踹中约十六岁少年，清瘦，短束发，粗布外门弟子服，左眉有细疤，少年身体后弓、
-双脚离地、正越过悬崖边线坠出；断魂崖，陡峭黑岩断崖，崖边一株枯树，崖下深不见底的冷雾，
-碎石被踢飞。冷调月光侧逆光拉出两人轮廓，体积雾光切开深蓝夜色。国风水墨与写实结合、
+电影感中近景侧面平视，二十岁左右白衣青年，身形修长，玉冠束发，眉眼锋利，银纹宗门长袍，
+收势的一脚已踹中约十六岁少年，清瘦，短束发，粗布外门弟子服，左眉有细疤，少年身体猛地
+后弓、双脚离地、仍在崖线以内；断魂崖，陡峭黑岩断崖，崖边一株枯树，崖下深不见底的冷雾，
+碎石在脚边震起。冷调月光侧逆光拉出两人轮廓，体积雾光切开深蓝夜色。国风水墨与写实结合、
 冷色调、高反差夜景、电影构图。画面干净，无文字、无水印、无多余人物，正确的手部与肢体结构。
 ```
 参数（不进提示词）：steps 10｜cfg 0｜1280×720｜固定seed=4477
 
-运镜/转场 (video, 首帧→尾帧) — 交给视频模型（LTX-2.3，见 `ltx2-video.md`），不喂给 Z-Image：
+K2 (尾帧) — 少年越过崖线、坠入冷雾（远景、镜头外移）：
 
 ```text
-镜头侧面横移轻微跟随，节奏由蓄力的短暂停顿转为爆发：白衣青年抬腿、发力、一脚踹出；
-少年被踹得后弓、双脚离地、越过崖线向崖外坠出。狂风骤起掀动两人衣袂与少年乱发，
-碎石与墨色尘土被踢飞、向崖下卷落，体积雾光随动作翻涌。约 4 秒，前段紧绷、后段急促失重。
+电影感远景高角度俯视，二十岁左右白衣青年，身形修长，玉冠束发，银纹宗门长袍，立在崖边
+收势；约十六岁少年，清瘦，短束发，粗布外门弟子服，左眉有细疤，抱紧玉简越过崖线、整个人
+向崖外坠出、在空中失衡旋转；断魂崖，陡峭黑岩断崖，崖边一株枯树，崖下深不见底的冷雾，
+碎石随之滚落坠入雾中。冷调月光侧逆光，体积雾光向上翻卷。国风水墨与写实结合、冷色调、
+高反差夜景、电影构图。画面干净，无文字、无水印、无多余人物，正确的手部与肢体结构。
+```
+参数（不进提示词）：steps 10｜cfg 0｜1280×720｜固定seed=4477
+
+运镜/转场 (video) — 交给视频模型（LTX-2.3，见 `ltx2-video.md`），不喂给 Z-Image。
+一段一条，K1 只渲染一次、既是片段1的尾也是片段2的首：
+
+```text
+片段1 (K0→K1)：镜头侧面横移轻微跟随，节奏由蓄力的短暂停顿转为爆发：白衣青年抬腿、
+发力、一脚踹出；少年被踹得后弓、双脚离地、仍在崖线以内。狂风掀动衣袂、碎石在脚边震起。
+约3秒，前段紧绷、后段猛烈命中。
+片段2 (K1→K2)：镜头从崖边向外跟摇并轻微下坠：白衣的赵天骄立在崖边收势，少年越过崖线、
+向崖外坠出、在空中失衡旋转、迅速变小。狂风把冷雾向上卷起，碎石滚落坠入深雾。约4秒，
+前段越线失重、后段坠向冷雾。
 ```
 
 Rules of thumb:
 - **Only the moment-in-time changes.** If you find yourself rewording an anchor or the lighting
-  between 首帧 and 尾帧, stop — that reintroduces drift.
-- **Same seed** for the pair; only randomize if the end-frame composition genuinely needs it.
-- **Static shots**: make the pair differ by a micro-beat (a breath, a blink, a gaze shift) and
-  write a minimal motion prompt (镜头极缓推进，人物近乎静止，只有呼吸与雾气浮动).
+  between adjacent keyframes, stop — that reintroduces drift.
+- **One seed for the whole chain**; only randomize if a later keyframe's composition genuinely
+  demands it.
+- **Keep each delta small.** If a single pair would be a big translation/pose/camera jump, insert
+  another keyframe and split it into two clips — that's what makes FLF2V interpolate cleanly.
+- **Static shots**: make a 2-keyframe pair differ by a micro-beat (a breath, a blink, a gaze
+  shift) and write a minimal motion prompt (镜头极缓推进，人物近乎静止，只有呼吸与雾气浮动).
 - **Motion prompt is backend-agnostic** (Wan2.2 FLF2V, Kling 首尾帧, Hailuo, LTX, Runway):
   describe 运镜 + 主体运动 + 环境运动 + 节奏时长. Do **not** put anchors/style/constraints in it,
   and never send it to Z-Image.

@@ -8,23 +8,29 @@ not, say exactly what to change in the prompt.
 You will receive:
 - `image_path`: the rendered PNG to inspect (view it).
 - `shot_id`: e.g. `2-3-05`.
-- `画面描述` (scene description): what the frame must show.
+- `keyframe_id`: which keyframe in the shot's chain this is, e.g. `K0` (首帧),
+  `K1`, … `Kn` (尾帧).
+- `节拍` (beat): the exact moment-in-time this keyframe must capture (its phase of
+  the shot's 关键帧节拍 K0→…→Kn).
 - `锚点` (anchors): the verbatim identity phrases for characters / places /
   props that must remain visually consistent across shots.
 - `景别 / 机位 / 运镜`: intended shot size, camera angle, movement.
 - `prompt`: the exact positive prompt that produced this image.
+- `prev_keyframe_image` (only for K1 and later): the already-solid previous
+  keyframe in the same chain, for chain-consistency and delta checks. Absent for K0.
 - `attempt`: which try this is (1-based).
 
 ## How to judge
 
-View the image, then evaluate against these dimensions. Judge the frame as a
-storyboard reference (composition + subject correctness), not as a finished VFX
-plate — minor softness or motion blur is acceptable if the skill's params asked
-for it.
+View the image (and `prev_keyframe_image` if given), then evaluate against these
+dimensions. Judge the frame as a storyboard reference (composition + subject
+correctness), not as a finished VFX plate — minor softness or motion blur is
+acceptable if the skill's params asked for it.
 
 1. **Subject & action match** — Are the described people/props present and doing
-   the described action? This is the most important axis. A frame showing the
-   wrong action or missing the key subject FAILS.
+   the action of THIS keyframe's 节拍 (not an earlier/later phase)? This is the
+   most important axis. A frame showing the wrong action or missing the key
+   subject FAILS.
 2. **Anchor consistency** — Do the characters/places match their anchor phrases
    (age, build, clothing, distinguishing marks like 左眉小疤; place features like
    枯树/冷雾)? Note any drift so it can be re-pinned in the prompt.
@@ -36,13 +42,28 @@ for it.
    limbs. These are FAIL-worthy when prominent.
 5. **Mood / lighting** — Does the lighting and tone match (e.g. 冷调月光, 高反差)?
    Minor mismatch is a soft note, not a fail by itself.
+6. **Chain consistency & delta** (K1 and later, using `prev_keyframe_image`) —
+   Two checks against the previous keyframe, because each adjacent pair becomes one
+   FLF2V clip and only interpolates cleanly across a *small* change:
+   - **Consistency**: same character look/anchors, same environment, lighting, and
+     style as the previous keyframe — it should read as the *same shot* an instant
+     later, differing only in the action/expression phase (and framing only if the
+     camera intentionally moves in this gap). Drift here FAILS.
+   - **Delta size**: the change from the previous keyframe should be ONE small
+     continuous motion beat, not a big jump (a large translation, a full pose swap,
+     or a big camera move). If the two frames are too far apart for FLF2V to
+     interpolate, report `DELTA: too_big` so the loop can insert an intermediate
+     keyframe; otherwise `DELTA: ok`.
 
 ## Verdict rules
 
-- **pass**: subject + action correct, anchors recognizable, framing roughly
-  right, no prominent artifacts. Small imperfections are fine.
+- **pass**: subject + action correct for this 节拍, anchors recognizable, framing
+  roughly right, no prominent artifacts, and (K1+) consistent with the previous
+  keyframe at a small interpolatable delta. Small imperfections are fine.
 - **fail**: wrong/missing subject or action, prominent artifacts (text, extra
-  people, broken hands/faces), or framing that contradicts the intended 景别.
+  people, broken hands/faces), framing that contradicts the intended 景别, or
+  (K1+) drift from the previous keyframe. A `DELTA: too_big` still reports the
+  keyframe's own pass/fail on the other axes, but flags the loop to split the gap.
 
 If it fails, propose a concrete, minimal prompt revision that fixes the SPECIFIC
 defect, using Z-Image Turbo tactics (from `references/z-image-turbo.md`):
@@ -65,10 +86,14 @@ Respond with EXACTLY this block and nothing else:
 ```
 VERDICT: pass|fail
 SHOT: <shot_id>
+KEYFRAME: <keyframe_id>
 REASONS:
 - <short concrete observation>
 - <...>
 ANCHOR_DRIFT: <none | which anchor drifted and how>
+DELTA: ok|too_big|N/A
 REVISED_PROMPT: <full revised positive prompt, or "N/A" if pass>
 SEED_ADVICE: keep|new|N/A
 ```
+
+`DELTA` is `N/A` for K0 (no predecessor); `ok` or `too_big` for K1 and later.

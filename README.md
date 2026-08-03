@@ -16,7 +16,7 @@ standalone skills and stripped of that project's built-in image/video generation
 | Skill | Stage | Input | Output |
 |-------|-------|-------|--------|
 | [`screenplay-writer`](screenplay-writer/SKILL.md) | 1 — 剧本 | Story synopsis/outline, or existing prose | Markdown screenplay: episodes → scenes → dialogue |
-| [`storyboard-prompt`](storyboard-prompt/SKILL.md) | 2 — 分镜图 prompt | A screenplay scene + visual assets | Shot-list table + a natural-language image prompt per shot |
+| [`storyboard-prompt`](storyboard-prompt/SKILL.md) | 2 — 分镜图 prompt | A screenplay scene + visual assets | Shot-list table + a keyframe chain (K0…Kn) of image prompts + one FLF2V video prompt per segment |
 | [`storyboard-render-loop`](storyboard-render-loop/SKILL.md) | 3 — render + QA | A novel excerpt (orchestrates 1+2) + a ComfyUI endpoint | Rendered storyboard PNGs, vision-QA'd and retried, plus a state manifest |
 
 They chain: `screenplay-writer` output feeds `storyboard-prompt`; `storyboard-render-loop`
@@ -26,10 +26,10 @@ orchestrates both and then renders.
 story / prose ──▶ screenplay-writer ──▶ 剧本 (scenes+dialogue)
                                             │
                                             ▼
-                       storyboard-prompt ──▶ 分镜脚本 + 分镜图 prompts
+                       storyboard-prompt ──▶ 分镜脚本 + 关键帧链(K0…Kn) + 逐段视频提示
                                             │
                                             ▼
-                  storyboard-render-loop ──▶ ComfyUI Z-Image Turbo ──▶ frames ──▶ vision QA ──▶ revise/retry
+                  storyboard-render-loop ──▶ ComfyUI Z-Image Turbo ──▶ keyframes ──▶ vision QA ──▶ revise/retry
 ```
 
 ### screenplay-writer (剧本)
@@ -44,11 +44,17 @@ story / prose ──▶ screenplay-writer ──▶ 剧本 (scenes+dialogue)
 - Establishes the visual bible first (a reusable **style phrase** + per-entity **anchor phrases**),
   deciding which appearance changes need a separate anchor vs. words.
 - Shot design driven by drama: 正反打 for dialogue, 跟拍/手持 for action, 特写+慢推 for
-  emotion; per shot picks 景别 / 时长 / 运镜 / 机位 / 画面描述 / 对白.
-- Per shot it emits **two** Z-Image Turbo image prompts — a **首帧 (start)** and **尾帧 (end)**
-  keyframe (identical except the action phase, sharing one seed) — plus an **LTX-2.3 FLF2V video
-  prompt** that animates start→end and **keeps the scene's narration and dialogue** (LTX-2.3
-  generates synchronized audio incl. speech; dialogue/VO go in the prompt with speaker + tone).
+  emotion; per shot picks 景别 / 时长 / 运镜 / 机位 / 关键帧节拍 / 对白.
+- Per shot it emits a **keyframe chain** `K0 → K1 → … → Kn` of Z-Image Turbo image prompts (首帧=K0,
+  尾帧=Kn; every keyframe a full standalone prompt, identical to its neighbours except the action
+  phase, the **whole chain sharing one seed**) — plus **one LTX-2.3 FLF2V video prompt per adjacent
+  pair** `Ki→Ki+1`. Because FLF2V only interpolates cleanly across a **small** motion delta, a shot
+  is rendered as **several short clips (~2–4s) concatenated**, not one big first→last morph: big
+  motions (a fall, a body flung across frame, a large pose change) get an intermediate keyframe
+  inserted; simple/near-static shots stay 2 keyframes = 1 clip. The shared boundary keyframe is
+  rendered once and reused as the join, and each clip **keeps the scene's narration and dialogue**
+  (LTX-2.3 generates synchronized audio incl. speech; dialogue/VO attach to the clip where they
+  occur, with speaker + tone).
 - Composes the image prompts for the default backend — **Z-Image Turbo (Tongyi-MAI) in ComfyUI**:
   long natural-language prompts, identity carried by verbatim anchor phrases (the base model is
   text-to-image with no reference-image input), exclusions baked into the positive prompt (negative
@@ -59,11 +65,14 @@ story / prose ──▶ screenplay-writer ──▶ 剧本 (scenes+dialogue)
 ### storyboard-render-loop (novel → rendered frames)
 - **Orchestrator** that runs the two skills above on a novel excerpt, then renders every shot
   on a **remote ComfyUI Z-Image Turbo** box over HTTP and self-corrects.
-- **Serial, closed loop per shot**: render → a vision subagent inspects the frame against its
-  画面描述 + anchors → pass, or revise the prompt (using Z-Image tactics) and retry until solid
-  or the retry limit (default 3) is hit.
-- Keeps a resumable `render-state.json` manifest (prompt, seed, attempts, verdict per shot),
-  fails loudly on endpoint/config errors, and produces a final status report.
+- **Serial, closed loop per keyframe**: render each keyframe of a shot's chain in order → a
+  vision subagent inspects it against its 节拍 + anchors and checks the delta from the previous
+  keyframe is small/interpolatable → pass, or revise the prompt (using Z-Image tactics) and retry
+  until solid or the retry limit (default 3) is hit; a too-big delta triggers inserting an extra
+  keyframe, an overloaded frame triggers a shot split.
+- Keeps a resumable `render-state.json` manifest (keyframes[] with prompt/seed/attempts/verdict +
+  segments[] with per-clip video prompts), renders each shared boundary keyframe once, fails loudly
+  on endpoint/config errors, and produces a final status report.
 - Ships a **stdlib-only** ComfyUI client (`scripts/comfy_zimage.py`), a default API workflow
   (`scripts/zimage_workflow.api.json`), and a QA subagent prompt (`agents/qa-inspect.md`).
   The ComfyUI server runs on a separate GPU box on your LAN — set `COMFYUI_HOST`.

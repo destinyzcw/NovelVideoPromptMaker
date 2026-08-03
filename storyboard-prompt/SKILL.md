@@ -7,9 +7,9 @@ description: >-
   景别/运镜/机位 (shot size, camera movement, angle), or write prompts to generate storyboard
   reference images / keyframes for an image model — even if they just say "拆分镜", "写分镜",
   "generate storyboard prompts", "给这场戏做分镜图", or "把剧本变成分镜". For each shot it
-  produces a start-frame (首帧) and end-frame (尾帧) image prompt PLUS an LTX-2.3
-  FLF2V video prompt (keeping the scene's narration and dialogue) to drive
-  image-to-video between them. It produces the shot design AND
+  produces a keyframe chain (首帧…尾帧, each adjacent pair a small delta) PLUS one
+  LTX-2.3 FLF2V video prompt per segment (short clips that concatenate, keeping the
+  scene's narration and dialogue) to drive image-to-video. It produces the shot design AND
   the text prompts, but does NOT call any specific image/video model — you hand the
   prompts to whatever backend you use. Default target is Z-Image Turbo in ComfyUI. This is the
   second stage after the screenplay-writer skill. Also trigger on "z-image", "z-image-turbo",
@@ -31,10 +31,12 @@ it **ignores negative prompts** (CFG=0 → bake exclusions into the positive pro
 (e.g. a reference-capable editor or a cloud API), fall back to the general multi-backend playbook
 in `references/prompt-composition.md`.
 
-**Default video target: LTX-2.3 (Lightricks) in ComfyUI, FLF2V mode.** The 首帧/尾帧 stills feed
-its first-last-frame workflow, and LTX-2.3 generates synchronized **audio incl. dialogue**, so the
-per-shot video prompt carries the scene's 台词 and VO/旁白. Read `references/ltx2-video.md` before
-writing video prompts.
+**Default video target: LTX-2.3 (Lightricks) in ComfyUI, FLF2V mode.** The keyframe-chain stills
+feed its first-last-frame workflow **one segment at a time** (each adjacent pair → one short clip,
+concatenated), and LTX-2.3 generates synchronized **audio incl. dialogue**, so the per-segment
+video prompt carries the scene's 台词 and VO/旁白. FLF2V only interpolates cleanly across a *small*
+motion, which is why a shot is chained into several short clips rather than one big jump. Read
+`references/ltx2-video.md` before writing video prompts.
 
 Two things make good storyboards hard: choosing shots that serve the drama, and keeping
 character/scene appearance **consistent** across shots and episodes. This skill encodes both.
@@ -80,6 +82,10 @@ For each shot decide: **景别** (远景/全景/中景/近景/特写), **时长*
 image prompt:
 - Describe composition, the subject's action and expression, and environment/atmosphere
   consistent with the scene.
+- **Express the action as a small chain of beats** (起点 → …小推进… → 落点), not one big jump —
+  Pass 2 turns each beat boundary into a keyframe, and the video model only interpolates cleanly
+  across small deltas. A calm shot is one beat (2 keyframes); a big move (一次跌落、蓄力到爆发)
+  is 2–3 beats.
 - Do **not** paste the dialogue into the description — dialogue goes in its own field as
   `角色名：台词`.
 - Keep it about what's *visible*, not backstory.
@@ -131,61 +137,75 @@ Turn each shot into a natural-language image prompt for **Z-Image Turbo**. Read
   the negative-prompt box is ignored by this model, so don't rely on it.
 - **Style vs. content** — apply only the *style phrase*; if the art-style description names a
   concrete place/subject that conflicts with this shot, keep its look, drop its content.
-- **Keyframes are the deliverable, not an afterthought.** Every shot produces **two full,
-  standalone Z-Image Turbo prompts** — a **首帧 (start frame)** at the action's opening phase
-  (动作开始前 / 刚发力 / 情绪起点) and a **尾帧 (end frame)** at its resolved phase (动作完成后的
-  结果 / 情绪落点). Write them as complete prompts, not deltas. They must be **identical in
-  everything except the action/expression phase** — same 景别 baseline, same anchor phrases
-  verbatim, same environment, same lighting clause, same style clause, same constraints — so the
-  two frames read as the same shot and can be interpolated by a video model. Only the moment-in-
-  time changes (and, if 运镜 moves the camera, the framing may shift start→end; state that shift
-  explicitly in both prompts). Reuse the **same seed** for 首帧 and 尾帧 so they stay visually
-  coherent. For a genuinely static shot, the two prompts differ only by a micro-beat (a breath, a
-  gaze shift) — say so rather than duplicating verbatim.
+- **Keyframe chain is the deliverable — not a single start/end pair.** A shot is a **chain of
+  standalone Z-Image prompts `K0 → K1 → … → Kn`** (首帧 = K0, 尾帧 = Kn). Write each as a
+  complete prompt, not a delta. **Why a chain, not just two frames:** the FLF2V video model
+  (LTX-2.3) interpolates cleanly only when the start and end images differ by a *small* motion;
+  a large jump between them morphs and warps. So each shot becomes several short clips that
+  concatenate, one per adjacent keyframe pair.
+- **Delta budget (beat-driven, ~2–4s per gap).** Keep every adjacent pair `Ki → Ki+1` within
+  **one small continuous motion beat**. If start→end would jump a **big translation** (a fall, a
+  body flung across frame), a **big pose change** (蓄力 → 爆发 → 落点), a **large camera move**, or
+  you'd narrate it with a second "然后/接着", **insert an intermediate keyframe** so each pair stays
+  small and interpolatable. A simple or near-static shot stays **2 keyframes (K0, K1)** = one clip;
+  a busy action beat may need 3–4 keyframes = 2–3 clips.
+- **Chain consistency.** Every keyframe is identical to its neighbors in everything **except the
+  action/expression phase** (and framing, if the camera moves within that gap — state the shift
+  explicitly in both). Same 景别 baseline, anchors verbatim, same lighting/style/constraints. The
+  **whole chain shares ONE seed** so all keyframes read as the same shot. The **shared boundary
+  frame `Ki` is rendered once** and reused as the end of clip *i-1* and the start of clip *i* — this
+  is what makes the concatenation seamless, so never reword it between the two clips it joins.
 
 If the user instead targets a reference-capable model (image editor / cloud API that accepts
 reference images), switch to the reference-ordering rules in `references/prompt-composition.md`.
 
-### Pass 3 — Compose the LTX-2.3 video prompt (FLF2V, per shot)
+### Pass 3 — Compose the LTX-2.3 video prompts (FLF2V, one per segment)
 
-Each shot also gets one **video prompt** that animates 首帧 → 尾帧. The target is
-**LTX-2.3** (Lightricks) via ComfyUI's **FLF2V** (first-last-frame → video)
-workflow: the two Z-Image frames are the start/end images, and this prompt drives
-the motion **and the audio**. LTX-2.3 is an audio+video model, so **this is where
-the screenplay's narrative and dialogue survive into the video stage** — keep the
-台词 and VO/旁白. Read `references/ltx2-video.md` for the full playbook. Keep
-actual video generation out of scope; you only write the prompt.
+Each **adjacent keyframe pair `Ki → Ki+1` gets its own video prompt**, so a shot with
+`n+1` keyframes yields **`n` short clips** that concatenate (in order) into the finished
+shot. The target is **LTX-2.3** (Lightricks) via ComfyUI's **FLF2V** (first-last-frame →
+video) workflow: each clip's two Z-Image keyframes are its start/end images, and its prompt
+drives the motion **and the audio**. LTX-2.3 is an audio+video model, so **this is where the
+screenplay's narrative and dialogue survive into the video stage** — keep the 台词 and VO/旁白.
+Read `references/ltx2-video.md` for the full playbook (large-motion limits, chaining, drift).
+Keep actual video generation out of scope; you only write the prompts.
 
-Write **one present-tense, flowing paragraph** (a mini-screenplay, no bullet
-lists) that choreographs the beat, using temporal connectors (随后/接着/与此同时/
-as/then/while). Include, in narrative order:
+For **each segment** write **one present-tense, flowing paragraph** (a mini-screenplay, no
+bullet lists) that choreographs only that segment's small beat, using temporal connectors
+(随后/接着/与此同时/as/then/while). Include, in narrative order:
 
-- **运镜 (camera)** — the shot's 景别/机位 plus the camera *move* and speed,
+- **运镜 (camera)** — the shot's 景别/机位 plus the camera *move* and speed for this segment,
   related to the action ("镜头随他抬腿而侧移").
-- **主体运动 (action)** — the motion across the gap between 首帧 and 尾帧, with
+- **主体运动 (action)** — the motion across this segment's `Ki → Ki+1` gap only, with
   cause→effect and small physical detail; emotion via body language.
 - **环境运动 (ambient)** — only the *moving* atmosphere (风、雾、发丝、碎屑、光闪);
   don't re-describe the frames' fixed appearance — the images already carry it.
-- **音频与叙事 (audio + narrative)** — the core reason to keep dialogue:
+- **音频与叙事 (audio + narrative)** — attach each line to the **segment where it actually
+  occurs**, not smeared across the shot:
   - **台词** in quotation marks with **speaker + tone**, verbatim from the
     screenplay: `赵天骄冷笑着说：“一个废物，也配觊觎宗门功法？”`
   - **VO / 旁白 / 内心独白** as a tagged spoken line:
     `林越（画外音，压抑）：“我不甘心……”`
   - **环境音/音效** (风声、碎石、掌风闷响) and an optional music bed, ordered with
     the action.
-- **节奏与时长 (pacing)** — echo the shot's 时长 and how energy changes
+- **节奏与时长 (pacing)** — echo this segment's ~2–4s and how energy changes
   (蓄力→爆发/推进→停顿).
+- **Drift reinforcement** — from the **2nd clip onward, briefly restate the key subject** (a short
+  identity cue, e.g. "白衣的赵天骄") so a long chain doesn't lose the character; keep it light — a
+  reminder, not the full anchor.
 - End with a **guardrail** clause so speech is voiced, not printed:
   `画面无字幕、无水印、无台词文字，动作连贯、无闪烁`.
 
-Do not put the anchor phrases or the 画风/约束 image clauses in the video prompt,
-and never feed this prompt to Z-Image. Keep dialogue in its original language
+Do not put the anchor phrases or the 画风/约束 image clauses in the video prompts,
+and never feed these prompts to Z-Image. Keep dialogue in its original language
 even if you describe motion in English (see the language note in the reference).
 
 ## Output template
 
-Produce Markdown: a shot-list table per scene, then a block per shot containing the two frame
-prompts and the LTX-2.3 video prompt.
+Produce Markdown: a shot-list table per scene, then a block per shot containing the shot's
+**keyframe chain** (K0…Kn, all sharing one seed) followed by **one LTX-2.3 video prompt per
+segment** (K0→K1, K1→K2, …). A simple shot has just K0/K1 + one segment; a big-motion shot adds
+intermediate keyframes and more segments.
 
 每个提示词都**单独放进一个代码块**，复制代码块内的文字即为要喂给模型的完整提示词；
 参数、说明等一律放在代码块**外**的独立段落，绝不与提示词混在一起。
@@ -196,38 +216,49 @@ prompts and the LTX-2.3 video prompt.
 **画风(style phrase)**：{可直接粘贴的一句话画风}
 **锚点**：{角色/场景/道具名 → 不变的外观短语，逐个列出}
 
-| 镜号 | 景别 | 时长(s) | 运镜 | 机位 | 画面描述(首→尾) | 对白 | 用到的锚点 |
+| 镜号 | 景别 | 时长(s) | 运镜 | 机位 | 关键帧节拍(K0→…→Kn) | 对白 | 用到的锚点 |
 |----|----|------|----|----|------|----|------|
-| 01 | 中景 | 4 | 慢推 | 平视 | 林越推门而入 → 停步，眼神从警惕转为震惊 | 林越：你早就知道了 | 林越/门厅 |
+| 01 | 中景 | 4 | 慢推 | 平视 | 推门而入 → 停步 → 眼神转为震惊 | 林越：你早就知道了 | 林越/门厅 |
 
-### 镜号 01
+### 镜号 01  （关键帧链 K0–K2 → 2 个片段；全链同一 seed）
 
-**首帧 (start) — Z-Image Turbo 提示词**（复制下面代码块内的文字进 CLIPTextEncode）
+**关键帧 K0 (首帧) — Z-Image Turbo 提示词**（复制下面代码块内的文字进 CLIPTextEncode）
 ```
 {完整自然语言提示词：景别机位+主体+锚点短语+动作起点+环境+光线+氛围+画风+约束}
 ```
 参数（不进提示词，设在 KSampler / 空 latent 节点）：steps 9｜cfg 0｜1024×1024｜固定seed=<S>
 
-**尾帧 (end) — Z-Image Turbo 提示词**（复制下面代码块内的文字进 CLIPTextEncode）
+**关键帧 K1 — Z-Image Turbo 提示词**（复制下面代码块内的文字进 CLIPTextEncode）
 ```
-{完整自然语言提示词：与首帧逐字相同，只改动作/表情阶段（与必要的构图位移）}
+{与 K0 逐字相同，只把动作/表情推进一个小节拍（与必要的构图位移）}
 ```
 参数（不进提示词，设在 KSampler / 空 latent 节点）：steps 9｜cfg 0｜1024×1024｜固定seed=<S>
 
-**LTX-2.3 视频提示词 (FLF2V, 首帧→尾帧，含台词/旁白)**（整段喂给 LTX-2.3，绝不喂 Z-Image）
+**关键帧 K2 (尾帧) — Z-Image Turbo 提示词**（复制下面代码块内的文字进 CLIPTextEncode）
 ```
-{一段现在时连续段落：运镜 + 主体运动 + 环境运动 + 台词（带说话人与语气，引号内逐字保留）
- + VO/旁白 + 环境音/音效 + 节奏时长 + 画面无字幕水印的约束}
+{与 K1 逐字相同，只把动作/表情再推进一个小节拍}
+```
+参数（不进提示词，设在 KSampler / 空 latent 节点）：steps 9｜cfg 0｜1024×1024｜固定seed=<S>
+
+**片段 1 视频提示词 (LTX-2.3 FLF2V, K0→K1，含台词/旁白)**（整段喂给 LTX-2.3，绝不喂 Z-Image）
+```
+{一段现在时连续段落，只写这一小节拍：运镜 + 主体运动 + 环境运动 + 台词（带说话人与语气，
+ 引号内逐字保留）+ VO/旁白 + 环境音/音效 + 节奏(~2–4s) + 画面无字幕水印的约束}
+```
+
+**片段 2 视频提示词 (LTX-2.3 FLF2V, K1→K2，含台词/旁白)**（整段喂给 LTX-2.3，绝不喂 Z-Image）
+```
+{下一小节拍；第 2 段起用一句简短身份提示复述主体以抗漂移}
 ```
 ````
 
-> **代码块里的文字就是提示词本体，代码块外的一切都不是提示词。** 三个代码块各自独立：
-> 两段「首帧/尾帧」进 Z-Image 的 CLIPTextEncode，`LTX-2.3 视频提示词`整段喂给 LTX-2.3 视频
-> 模型、绝不喂 Z-Image。`参数`行（steps/cfg/尺寸/seed）设在 KSampler / 空 latent 节点，不是
-> 靠文字，所以放在代码块外。Z-Image 的文本编码器（Qwen3-4B）会把提示词里的一切当作字面文字
-> 编码，且 CFG≈0、无负向提示可抑制，一旦把参数或运镜/台词描述混进图像提示词，可能被当成要画
-> 的文字/数字渲染进画面（与「无文字」冲突）。首帧与尾帧用**同一个 seed**，以保证是同一镜头的
-> 两个瞬间；LTX-2.3 用这两帧作首/尾帧插值。
+> **代码块里的文字就是提示词本体，代码块外的一切都不是提示词。** 关键帧代码块各自独立，逐个
+> 进 Z-Image 的 CLIPTextEncode；每个`片段`视频提示词整段喂给 LTX-2.3、绝不喂 Z-Image。`参数`行
+> （steps/cfg/尺寸/seed）设在 KSampler / 空 latent 节点，不是靠文字，所以放在代码块外。Z-Image
+> 的文本编码器（Qwen3-4B）会把提示词里的一切当作字面文字编码，且 CFG≈0、无负向提示可抑制，一旦
+> 把参数或运镜/台词描述混进图像提示词，可能被当成要画的文字/数字渲染进画面（与「无文字」冲突）。
+> **整条关键帧链用同一个 seed**，相邻两帧只差一个小动作节拍，保证 FLF2V 能平滑插值；边界帧 Ki
+> 只渲染一次，同时作上一片段的尾帧与下一片段的首帧，拼接才无跳变。
 
 ## Consistency rules (why they matter)
 
