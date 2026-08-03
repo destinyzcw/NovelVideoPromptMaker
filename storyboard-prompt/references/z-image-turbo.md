@@ -11,6 +11,8 @@ specifically. Read this whenever you generate 分镜图 prompts intended for Z-I
 4. Prompt scaffold (layered)
 5. Recommended ComfyUI parameters
 6. Worked examples (Chinese, storyboard shots)
+7. First/last-frame pairs + the motion prompt
+8. Scene complexity — budget, split, and bind
 
 ## 1. What makes Z-Image Turbo different
 
@@ -156,3 +158,35 @@ Rules of thumb:
 - **Motion prompt is backend-agnostic** (Wan2.2 FLF2V, Kling 首尾帧, Hailuo, LTX, Runway):
   describe 运镜 + 主体运动 + 环境运动 + 节奏时长. Do **not** put anchors/style/constraints in it,
   and never send it to Z-Image.
+
+## 8. Scene complexity — budget, split, and bind
+
+The most common failure mode is **one frame carrying too much**. Z-Image's encoder reads the whole
+paragraph literally and won't infer relationships; with CFG≈0 there's no negative prompt to rescue
+you, so a prompt stuffed with many subjects, props, and simultaneous actions makes the model **drop
+or swap attributes** (wrong clothes on the wrong person, missing props, merged bodies). Length alone
+isn't the problem — the sweet spot is ~80–250 words — *element density* is.
+
+**Budget every frame.** Aim for **≤3 subjects/props that must each render correctly** and **one
+primary action** per image. Background crowds/objects are free as *atmosphere* words
+(`远处模糊的市集人群`), but anything that must be accurate counts.
+
+**Split instead of cram.** A busy moment is a *sequence*, not one image — cut it into
+establishing 全景/远景 → 中景 → 近景/特写 (or sub-shots `01a/01b` within one continuous beat, same
+location & lighting). Each frame then only describes what its 景别 shows, so every prompt stays in
+budget. This is the primary fix and it improves coverage.
+
+**Bind attributes when >1 subject shares a frame.** Keep each subject's clauses as one contiguous
+block (anchor + clothing + action + expression), don't interleave; give each a spatial anchor and
+bind its action to it:
+
+```text
+画面左侧，约十六岁少年，清瘦，短束发，粗布外门弟子服，左眉有细疤，半跪着攥紧怀中残破玉简、抬眼瞪视；
+画面右侧，二十岁左右白衣青年，玉冠束发，银纹宗门长袍，负手而立、居高临下地冷笑。
+```
+Grouping + 左/右/前景/背景 + per-subject actions is what stops the model from mixing them up.
+
+**Last resort — a single busy frame is unavoidable.** This is no longer a prompt problem: use a
+ComfyUI compositing approach — **regional prompting / attention-couple** (bind each subject to a
+mask/region), or **generate a base then inpaint** subjects one at a time. Heavier to set up; the
+project default stays split-and-anchor.

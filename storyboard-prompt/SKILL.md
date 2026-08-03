@@ -84,6 +84,30 @@ image prompt:
   `角色名：台词`.
 - Keep it about what's *visible*, not backstory.
 
+**复杂度预算与拆分 (complexity budget & splitting)** — the single biggest cause of a Z-Image
+frame going wrong is asking one image to hold too much. Its text encoder won't infer
+relationships, and with CFG≈0 it silently drops or swaps attributes when a prompt piles up
+subjects, props, and simultaneous actions. So treat **each frame as one readable image**, and
+budget it before you write the prompt:
+
+- **Per-frame budget**: aim for **≤3 anchored subjects/props that must be individually correct**
+  and **one primary action**. Background crowds/objects are fine as *atmosphere* ("远处模糊的市集人群"),
+  but anything that must render accurately counts against the budget.
+- **If a beat exceeds the budget, split it into more shots — this is a feature, not a workaround.**
+  A busy moment is naturally a *sequence*: cut it into an **establishing 全景/远景** (composition +
+  where everyone is) → **中景** (the interaction) → **近景/特写** (the detail that carries the beat).
+  Each resulting frame carries only what its 景别 actually shows, so every prompt stays inside the
+  budget and you get better dramatic coverage for free.
+- **Sub-shots when the cut is within one continuous moment**: number them `01a / 01b …` (same
+  location/lighting, adjacent framings) so it's clear they belong to one story beat.
+- **Demote, don't cram**: if splitting isn't wanted, move non-essential enumerated objects into a
+  single atmosphere clause and let the frame breathe — a clean image of the key subjects beats a
+  cluttered one that gets them wrong.
+- **Last resort (single busy frame unavoidable)**: this is no longer a pure prompt problem — use a
+  ComfyUI compositing approach (regional prompting / attention-couple to bind each subject to a
+  region, or generate a base then inpaint subjects one at a time). Note it for the user; the skill's
+  default remains split-and-anchor.
+
 ### Pass 2 — Compose the 分镜图 prompt (per shot)
 
 Turn each shot into a natural-language image prompt for **Z-Image Turbo**. Read
@@ -94,6 +118,13 @@ Turn each shot into a natural-language image prompt for **Z-Image Turbo**. Read
 - **Layer it**: `景别/机位 + 主体 → 主体的锚点短语 → 动作/表情 → 环境/背景 → 光线 → 氛围 →
   画风 → 技术 → 约束`. Embed each entity's **anchor phrase verbatim** so identity stays stable
   across shots (no reference images are used).
+- **Attribute binding for multiple subjects** — when a frame has more than one subject/prop, the
+  encoder mixes up who-has-what unless you bind attributes explicitly. Keep each subject's clauses
+  **grouped as one contiguous block** (anchor + clothing + action + expression together), then move
+  to the next subject; don't interleave. Give each a **spatial anchor** (画面左/中/右、前景/背景、
+  近/远) and **bind its action to it** (`左侧的林越攥紧玉简、抬眼；右侧的赵天骄负手冷笑`), rather
+  than describing actions in a shared pile. This is the same discipline as the per-frame budget: the
+  fewer subjects and the tighter each binding, the more reliably Z-Image gets them right.
 - **Lighting gets its own clause** — Z-Image responds strongly to it (侧逆光、冷调月光、
   高反差夜景、体积雾光…).
 - **Bake exclusions into the positive prompt** at the end (`画面干净，无文字、无水印、无多余人物`);

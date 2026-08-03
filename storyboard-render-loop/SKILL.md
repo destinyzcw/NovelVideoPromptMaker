@@ -198,6 +198,12 @@ For each shot `s`, for each frame `f` in (`first`, `last`), loop until pass or l
    - **fail** and `attempts == retry_limit` → set the frame's `status:"failed"`,
      keep the best attempt's image, record why. Do NOT let one stubborn frame
      stall the whole run.
+   - **overloaded frame** → if failures recur because the frame has too many
+     subjects/props/actions to render reliably (elements keep dropping or swapping,
+     not a wording slip), rewording won't help. Flag the shot as needing a **split**
+     (per `storyboard-prompt` Pass 1's complexity budget): break it into
+     establishing → 中景 → 近景 or sub-shots `<id>a/<id>b`, regenerate their prompts,
+     and render those instead. Record the split in the manifest and tell the user.
 
 4. **Persist.** Update `render-state.json` after every attempt.
 
