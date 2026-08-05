@@ -12,9 +12,8 @@ description: >-
   generation with actually rendering and visually QA-ing the images in a loop.
   This skill orchestrates the screenplay-writer and storyboard-prompt skills,
   calls the ComfyUI API to render each shot, uses a vision subagent to inspect
-  every frame one by one, and revises prompts and retries until each frame is
-  good or the retry limit is hit. Use it even when the user only says "generate
-  the images for this" if a novel/script/storyboard is in play.
+  each frame, and revises prompts until it passes or reaches the retry limit.
+  Use it when "generate the images" refers to a novel, script, or storyboard.
 ---
 
 # Storyboard render loop (novel → screenplay → storyboard → rendered frames)
@@ -26,7 +25,7 @@ image backend into one closed feedback loop:
 novel text
    │  (screenplay-writer skill)
    ▼
-剧本 / screenplay  ──(storyboard-prompt skill)──▶  分镜表 + 关键帧链(K0…Kn) + 逐段视频提示 + anchors
+剧本 / screenplay  ──(storyboard-prompt skill)──▶  分镜表 + H3端点帧(K0/K1) + H3提示 + anchors
                                                         │
                           ┌─────────────────────────────┘
                           ▼   serial, one keyframe at a time
@@ -82,27 +81,24 @@ what each scene contains.
 
 ## Stage 2 — Screenplay → storyboard + Z-Image prompts
 
-Follow the `storyboard-prompt` skill (Z-Image Turbo mode) on the screenplay to
-produce, per shot: 镜号, 景别, 运镜, 机位, 关键帧节拍(K0→…→Kn), 对白, **用到的锚点**,
-and — the key outputs this loop renders — a **keyframe chain** `K0 → K1 → … → Kn`
-(每个 Ki 是一条完整的 Z-Image 正向提示词，整条链共享一个 seed；相邻两帧只在动作/
-表情阶段不同，构成一个可被 FLF2V 平滑插值的小 delta)，外加**逐段视频提示**：每相邻
-一对 `Ki→Ki+1` 一条 LTX-2.3 FLF2V 提示词，动画化该小段并**保留该段的 台词 与 VO/
-旁白**（LTX-2.3 生成含对白的同步音频）。Also capture the scene-level **画风 (style
-phrase)** and the **锚点表 (anchors)** — these keep characters/props consistent
-across frames and are what the QA step checks against.
+Follow the `storyboard-prompt` skill (Z-Image Turbo + MiniMax-H3 mode) on the
+screenplay. For the default FL2VA path, each shot supplies **K0 / Picture 1** and
+**K1 / Picture 2**, complete Z-Image prompts for the exact opening and ending
+frames of one 4–15 second H3 shot, plus one H3 audiovisual prompt describing the
+continuous action path, stable speakers, verbatim dialogue/VO, soundscape, and
+music. Also capture the scene-level **画风**, **锚点表**, speaker registry, H3 mode,
+duration, and request parameters.
 
-A shot therefore has **n+1 keyframes to render** (K0…Kn) and **n video segments**
-(K0→K1, …, Kn-1→Kn). Simple/near-static shots stay 2 keyframes = 1 segment. The
-video prompts are carried through but **not rendered** — video generation is out of
-scope for this loop; they are stored, ready for LTX-2.3's FLF2V workflow using each
-adjacent keyframe pair as the start/end anchors.
+A normal FL2VA shot therefore has **two endpoint frames and one H3 request**.
+Optional intermediate storyboard images are planning aids, not H3 API inputs.
+Ref2VA shots carry an ordered reference manifest and must not mix reference roles
+with first/last-frame roles. Video generation remains out of scope for this loop.
 
 ## Stage 3 — Build the render-state manifest
 
-Create `renders/<slug>/render-state.json`: one record per shot, carrying a flat
-`keyframes` list (the images to render, in order) and a `segments` list (the video
-prompts joining adjacent keyframes). This is the loop's memory — update it after
+Create `renders/<slug>/render-state.json`: one record per shot, carrying a
+`keyframes` list and an `h3_generation` object with mode, duration, endpoint or
+reference mapping, and the complete audiovisual prompt. This is the loop's memory — update it after
 every attempt so the run is resumable and the final report is trivial to produce.
 
 ```json
@@ -118,8 +114,10 @@ every attempt so the run is resumable and the final report is trivial to produce
   "shots": [
     {
       "id": "2-3-05",
-      "景别": "中近景→远景", "机位": "侧面平视→高角度俯视",
-      "关键帧节拍": "K0 抬腿蓄力 → K1 踹实、少年双脚离地 → K2 越崖坠出",
+      "景别": "全景", "机位": "侧面平视",
+      "动作路径": "K0 抬腿蓄力 → 踹实、少年双脚离地 → K1 越崖坠出",
+      "duration": 6,
+      "h3_mode": "fl2va",
       "用到的锚点": ["林越", "赵天骄", "断魂崖", "残破玉简"],
       "seed": 4477,
       "keyframes": [
@@ -131,21 +129,21 @@ every attempt so the run is resumable and the final report is trivial to produce
         },
         {
           "id": "K1",
-          "prompt": "电影感中近景侧面平视…一脚已踹中…双脚离地仍在崖线内…画面干净，无文字…",
-          "params": {"steps": 10, "cfg": 1.0, "width": 1280, "height": 720},
-          "attempts": [], "status": "pending", "image_path": null
-        },
-        {
-          "id": "K2",
           "prompt": "电影感远景高角度俯视…越过崖线坠出、空中失衡旋转…画面干净，无文字…",
           "params": {"steps": 10, "cfg": 1.0, "width": 1280, "height": 720},
           "attempts": [], "status": "pending", "image_path": null
         }
       ],
-      "segments": [
-        {"from": "K0", "to": "K1", "video_prompt": "中近景侧面横移…赵天骄冷笑着说：“一个废物，也配觊觎宗门功法？”…约3秒，前段蓄力、后段猛烈命中。画面无字幕、无水印。"},
-        {"from": "K1", "to": "K2", "video_prompt": "镜头从崖边向外跟摇下坠…林越（画外音，压抑）：“我不甘心……”…约4秒，前段越线失重、后段坠向冷雾。画面无字幕、无水印。"}
-      ],
+      "h3_generation": {
+        "model": "MiniMax-H3",
+        "mode": "fl2va",
+        "duration": 6,
+        "resolution": "2K",
+        "ratio": "adaptive",
+        "first_frame": "K0",
+        "last_frame": "K1",
+        "prompt": "How the reference pictures align with the target video — Picture 1..."
+      },
       "status": "pending"
     }
   ]
@@ -155,15 +153,14 @@ every attempt so the run is resumable and the final report is trivial to produce
 Keyframe `status` ∈ `pending | solid | failed`. Each entry in a keyframe's
 `attempts` records `{n, seed, prompt, image_path, verdict, reasons, anchor_drift}`.
 A shot's top-level `status` is `solid` only when **all** keyframes are `solid`;
-`failed` if any keyframe ends `failed`. **All keyframes in a shot share the shot's
-`seed`** so the chain stays coherent. Each `segments[i]` references two keyframe ids;
-the shared boundary keyframe (e.g. K1) is rendered **once** and reused as the end of
-one segment and the start of the next — never render or reword it twice.
+`failed` if any keyframe ends `failed`. Endpoint frames normally share the shot's
+`seed` as a Z-Image continuity aid. `h3_generation.first_frame` and `last_frame`
+must resolve to solid images, and duration must be an integer from 4 through 15.
 
 ## Stage 4 — The render + QA loop (SERIAL, one keyframe at a time)
 
-Process shots **strictly one at a time, in order**, and within a shot render the
-keyframes **K0, K1, … Kn in order**. Do not batch-render then batch-review — serial
+Process shots **strictly one at a time, in order**, and within a FL2VA shot render
+**K0 then K1** (plus any explicitly requested planning frames). Do not batch-render then batch-review — serial
 processing is what lets a lesson learned on an early keyframe (e.g. an anchor that
 keeps drifting, a seed that composes badly) inform the next keyframe/shot, and it
 keeps the ComfyUI box from thrashing.
@@ -198,12 +195,10 @@ pass or limit:
    `VERDICT: pass|fail` block with `REASONS`, `ANCHOR_DRIFT`, `REVISED_PROMPT`,
    `SEED_ADVICE`.
 
-   For every keyframe after K0, also check it is **consistent with the previous
-   already-solid keyframe** (same character look/anchors, same environment/lighting/
-   style) and that the change from the previous keyframe is a **small, FLF2V-
-   interpolatable delta** — one continuous motion beat, not a big jump. A keyframe
-   that drifts from its predecessor, or that is too far from it to interpolate,
-   fails: adjacent frames must join as one seamless segment.
+   For K1, also check it is **consistent with K0** in character identity, location,
+   aspect ratio, lighting, and style, and that the storyboard's action path can
+   plausibly connect the endpoints within the declared 4–15 seconds. A deliberate
+   action or composition change is expected; identity or scene drift is not.
 
 3. **Decide.**
    - **pass** → set the keyframe's `status:"solid"`, `image_path` to this render,
@@ -218,13 +213,10 @@ pass or limit:
    - **fail** and `attempts == retry_limit` → set the keyframe's `status:"failed"`,
      keep the best attempt's image, record why. Do NOT let one stubborn keyframe
      stall the whole run.
-   - **delta too big** → if a keyframe keeps failing the adjacency check because the
-     jump from the previous keyframe is too large to interpolate (not a wording
-     slip), rewording won't help. **Insert an intermediate keyframe** between them
-     (per `storyboard-prompt` Pass 2's delta budget), splitting that segment into
-     two smaller beats; generate its prompt (same seed) and its two video prompts,
-     add them to `keyframes`/`segments`, and render the new keyframe. Record the
-     insertion in the manifest and tell the user.
+   - **endpoint path implausible** → if K0 and K1 require a location change, unrelated
+     camera setup, or several disconnected actions, rewording will not help. Split
+     the beat into separate 4–15 second H3 shots and regenerate each shot's endpoint
+     frames and H3 prompt.
    - **overloaded frame** → if failures recur because a keyframe has too many
      subjects/props/actions to render reliably (elements keep dropping or swapping,
      not a wording slip), rewording won't help. Flag the shot as needing a **split**
@@ -249,11 +241,10 @@ When all shots are `solid` or `failed`, summarize for the user:
 - Call out any `failed` keyframes with the QA reasons and suggest next moves
   (different seed range, simplify the shot, insert/split keyframes, or hand-edit).
 - Point to `render-state.json` and the image directory.
-- When all keyframes of a shot are solid, note that the shot is ready for LTX-2.3
-  FLF2V: render each `segments[i]` as one short clip using keyframe `from` + `to`
-  as the start/end images and its `video_prompt` (which carries the 台词/VO), then
-  concatenate the clips in order (the shared boundary keyframe makes the joins
-  seamless). Video generation itself stays out of scope here.
+- When both endpoint frames are solid, note that the shot is ready for MiniMax-H3
+  FL2VA using K0 as `first_frame`, K1 as `last_frame`, and the complete H3 prompt.
+  For Ref2VA, report that its ordered reference manifest and six-section prompt are
+  ready. Video generation itself stays out of scope here.
 
 Keep the report concise and skimmable. Show the images inline if the environment
 supports it.
@@ -283,5 +274,5 @@ supports it.
   troubleshooting.
 - `references/z-image-turbo.md` — the Z-Image prompt wording playbook the
   revision step draws on.
-- `references/ltx2-video.md` — the LTX-2.3 FLF2V video-prompt playbook (dialogue/
-  VO/audio syntax) for the carried-through `video_prompt`.
+- `references/minimax-h3-video.md` — official-guide-derived H3 Base/Ref2VA prompt
+  contracts, dialogue/VO syntax, audio fields, and request validation.

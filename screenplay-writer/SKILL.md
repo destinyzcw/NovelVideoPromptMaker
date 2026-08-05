@@ -8,7 +8,8 @@ description: >-
   chapter or story synopsis into scenes and dialogue, break a story into episodes and
   scenes, or produce shootable script text — even if they just say "把这个故事写成剧本",
   "写个剧本", "adapt this into a script", or "拆成分集". This is the first stage before
-  storyboard/分镜 work; pair it with the storyboard-prompt skill for shot design.
+  storyboard/分镜 work; pair it with the storyboard-prompt skill for MiniMax-H3-native
+  audiovisual shot design, dialogue, voiceover, soundscape, and music prompts.
 ---
 
 # Screenplay Writer (剧本)
@@ -61,7 +62,28 @@ instead of inventing them; if there are none, treat it as a single episode.
 
 Process **every** episode from the plan — one at a time, in order, none skipped. For each
 episode, write **3–8 scenes**. For each scene decide location, time, interior/exterior,
-which characters/props appear, then write the action and dialogue.
+which characters/props appear, then write the action, dialogue, and audiovisual intent.
+
+### H3-ready beat design
+
+The downstream video target is MiniMax-H3, which generates picture, dialogue, ambience,
+physical sound, and music together. Write scenes so the storyboard stage can build a clear
+4–15 second audiovisual timeline for every shot:
+
+- Keep each `▲` line to **one observable action or reaction beat**. If a line contains several
+  sequential actions joined by “然后/接着/随即”, split it into separate beats.
+- Give important dialogue its own visual reaction window. Avoid stacking a major action, two
+  speakers, and a camera transition on the same line.
+- Keep spoken lines short enough to fit naturally in the intended beat. If a sentence would
+  consume most of a 15-second clip, split it at a natural dramatic pause rather than relying on
+  rushed speech.
+- Make the vocal source unambiguous: on-camera dialogue, `VO`, and `OS` have different lip-sync
+  behavior. A `VO` line means the visible character's lips must remain closed.
+- Add sound or music cues only when they matter dramatically. Distinguish **diegetic sound**
+  (`【音效：…】` / `【环境音：…】`) from audience-only score (`【配乐：…】`) so the storyboard
+  stage can place them in H3's separate soundscape and music fields.
+- Prefer one active speaker per visual beat. Two-person overlap is allowed when the story needs
+  it, but mark it explicitly rather than leaving accidental ambiguity.
 
 This is a loop, not a sample. Never stop early with "剩余集数同理" / "以此类推" / "for
 brevity". Before you report done, verify the number of episodes you wrote equals the plan.
@@ -77,6 +99,9 @@ downstream storyboard stage parses.
 - **Voiceover / narration**: mark with `VO` — e.g. `林越（VO）：那一年，我还不懂什么叫代价。`
 - **Camera / shot instruction** (optional, use sparingly): wrap in `【】` — e.g. `【推近至特写】`
 - **Dialogue**: `角色名：台词内容` — e.g. `林越：你早就知道了，对吗？`
+- **Diegetic sound cue**: `【音效：碎石滚落，剑气爆鸣】`
+- **Ambient sound cue**: `【环境音：持续崖风，远处闷雷】`
+- **Audience-only score cue**: `【配乐：低音弦乐缓慢加压，在坠崖时骤停】`
 
 ## Output template
 
@@ -107,6 +132,9 @@ Produce Markdown. Use this structure:
 {角色名}：{台词}
 {角色名}（VO）：{旁白}
 【{镜头指令}】
+【环境音：{持续环境声}】
+【音效：{与动作同步的物理声音}】
+【配乐：{乐器、速度、动态变化；无配乐则省略}】
 ...
 
 ### 1-2 ...
@@ -124,6 +152,12 @@ Produce Markdown. Use this structure:
   Drift is the most common failure and it silently corrupts continuity.
 - **Dialogue carries character** — voice should match each character's personality from the
   bible, and pace should follow the episode synopsis's rhythm.
+- **Audio cues describe sources, not feelings** — write audible events, instruments, tempo, and
+  dynamics rather than abstract instructions such as “音乐很悲伤”. H3 needs concrete sound
+  material it can synchronize with visible actions.
+- **Preserve spoken wording** — once a line is written, downstream H3 prompts must keep every
+  word and punctuation mark verbatim inside a `<d>[Language] ...</d>` block. Avoid placeholder
+  dialogue or alternatives joined by slashes.
 - **Finish the work** — every planned episode gets scenes. Partial delivery with a promise
   to "continue later" defeats the purpose.
 

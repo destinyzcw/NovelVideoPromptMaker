@@ -8,16 +8,15 @@ not, say exactly what to change in the prompt.
 You will receive:
 - `image_path`: the rendered PNG to inspect (view it).
 - `shot_id`: e.g. `2-3-05`.
-- `keyframe_id`: which keyframe in the shot's chain this is, e.g. `K0` (首帧),
-  `K1`, … `Kn` (尾帧).
-- `节拍` (beat): the exact moment-in-time this keyframe must capture (its phase of
-  the shot's 关键帧节拍 K0→…→Kn).
+- `keyframe_id`: `K0` / Picture 1 (首帧), `K1` / Picture 2 (尾帧), or an explicitly
+  requested planning frame that is not an H3 API input.
+- `节拍` (beat): the exact opening, planning, or ending state this frame must capture.
 - `锚点` (anchors): the verbatim identity phrases for characters / places /
   props that must remain visually consistent across shots.
 - `景别 / 机位 / 运镜`: intended shot size, camera angle, movement.
 - `prompt`: the exact positive prompt that produced this image.
-- `prev_keyframe_image` (only for K1 and later): the already-solid previous
-  keyframe in the same chain, for chain-consistency and delta checks. Absent for K0.
+- `prev_keyframe_image` (for K1): the already-solid K0 opening frame, used for
+  endpoint consistency and path-reachability checks. Absent for K0.
 - `attempt`: which try this is (1-based).
 
 ## How to judge
@@ -42,24 +41,22 @@ acceptable if the skill's params asked for it.
    limbs. These are FAIL-worthy when prominent.
 5. **Mood / lighting** — Does the lighting and tone match (e.g. 冷调月光, 高反差)?
    Minor mismatch is a soft note, not a fail by itself.
-6. **Chain consistency & delta** (K1 and later, using `prev_keyframe_image`) —
-   Two checks against the previous keyframe, because each adjacent pair becomes one
-   FLF2V clip and only interpolates cleanly across a *small* change:
+6. **H3 endpoint consistency & reachability** (K1, using `prev_keyframe_image`) —
+   Two checks against the opening frame because the pair anchors one 4–15 second FL2VA shot:
    - **Consistency**: same character look/anchors, same environment, lighting, and
      style as the previous keyframe — it should read as the *same shot* an instant
      later, differing only in the action/expression phase (and framing only if the
      camera intentionally moves in this gap). Drift here FAILS.
-   - **Delta size**: the change from the previous keyframe should be ONE small
-     continuous motion beat, not a big jump (a large translation, a full pose swap,
-     or a big camera move). If the two frames are too far apart for FLF2V to
-     interpolate, report `DELTA: too_big` so the loop can insert an intermediate
-     keyframe; otherwise `DELTA: ok`.
+   - **Reachability**: the written action path should plausibly connect the endpoint
+     states within the duration and intended camera setup. Large physical motion is
+     allowed; a location change, unrelated viewpoint, or disconnected actions are not.
+     Report `DELTA: too_big` only when the beat should be split into separate H3 shots.
 
 ## Verdict rules
 
 - **pass**: subject + action correct for this 节拍, anchors recognizable, framing
-  roughly right, no prominent artifacts, and (K1+) consistent with the previous
-  keyframe at a small interpolatable delta. Small imperfections are fine.
+  roughly right, no prominent artifacts, and K1 is identity/style-consistent with K0
+  along a plausible H3 action path. Small imperfections are fine.
 - **fail**: wrong/missing subject or action, prominent artifacts (text, extra
   people, broken hands/faces), framing that contradicts the intended 景别, or
   (K1+) drift from the previous keyframe. A `DELTA: too_big` still reports the

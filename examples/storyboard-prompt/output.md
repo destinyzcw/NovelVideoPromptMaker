@@ -1,159 +1,160 @@
+# MiniMax-H3 分镜示例：断魂崖
+
 ## 分镜：第 2 集 · 2-3 断魂崖
 
-**画风(style phrase)**：国风水墨与写实结合、冷色调、电影感、高反差夜景、冷调月光、体积雾光、胶片颗粒
-**锚点**：
-- 林越(初始) → 约十六岁少年，清瘦，短束发，粗布外门弟子服，左眉有细疤
-- 赵天骄(初始) → 二十岁左右白衣青年，身形修长，玉冠束发，眉眼锋利，银纹宗门长袍
-- 断魂崖(场景) → 陡峭黑岩断崖，崖边一株枯树，崖下深不见底的冷雾
-- 残破玉简(道具) → 巴掌大的残破玉简，边缘焦黑，表面暗金云纹
+**画风**：国风水墨与写实结合，冷色调电影感，高反差夜景，冷调月光穿过体积雾，细腻胶片颗粒。
 
-| 镜号 | 景别 | 时长(s) | 运镜 | 机位 | 关键帧节拍(K0→…→Kn) | 对白 | 用到的锚点 |
-|----|----|------|----|----|------|----|------|
-| 01 | 全景 | 4 | 手持急推 | 侧面平视 | K0 被掌风击中刚离地 → K1 半空后飞逼近枯树 → K2 撞上枯树、枯枝震落 |  | 林越(初始)/赵天骄(初始)/断魂崖(场景)/残破玉简(道具) |
-| 02 | 中景 | 5 | 缓慢跟移 | 低角度仰视 | K0 从风雾中迈步逼近 → K1 停在林越前俯视、眼神轻蔑 | 赵天骄：一个废物，也配觊觎宗门功法？ | 林越(初始)/赵天骄(初始)/断魂崖(场景)/残破玉简(道具) |
-| 03 | 近景 | 5 | 慢推 | 平视 | K0 伏在枯树旁喘息 → K1 挣扎撑起上身、攥紧玉简 | 林越：这功法……是我的。 | 林越(初始)/断魂崖(场景)/残破玉简(道具) |
-| 04 | 中近景 | 3 | 轻微侧移 | 过肩俯视 | K0 冷笑俯看林越 → K1 右脚后撤蓄力、衣袂被风拉直 |  | 林越(初始)/赵天骄(初始)/断魂崖(场景)/残破玉简(道具) |
-| 05 | 全景 | 7 | 侧移跟随下沉 | 侧面平视 | K0 抬腿蓄力 → K1 踹实、双脚离地未离崖 → K2 越崖坠出、空中失衡 | 林越（VO）：我不甘心…… | 林越(初始)/赵天骄(初始)/断魂崖(场景)/残破玉简(道具) |
-| 06 | 远景 | 5 | 俯拍下摇 | 高角度俯视 | K0 坠入崖外冷雾上方 → K1 被深雾吞没、只剩枯树与赵天骄 |  | 林越(初始)/赵天骄(初始)/断魂崖(场景)/残破玉简(道具) |
+**视觉锚点**
 
-> 关键帧链设计说明：**大位移/大动作按运动节拍拆成关键帧链，一个相邻对渲一段短视频再拼接**。
-> 镜号 01（被击飞→撞树）是大幅位移，拆成 K0→K1→K2 三帧、两段片段；镜号 05（踹击→坠出）是连续
-> 大动作，拆成三帧、两段（VO 落在坠出那一段）。镜号 02/03/04/06 动作小，保留两帧一段。**镜号 05→06
-> 之间机位从侧面平视切到高角度俯视是一次大幅运镜，属于「切镜」而非链内相邻帧**，所以另起一个镜号，
-> 不放进同一条链——链内相邻帧必须机位相近、只差一个可被 FLF2V 平滑插值的小节拍。每条链共享同一 seed。
+- 林越：约十六岁少年，清瘦，短束发，粗布外门弟子服，左眉有细疤
+- 赵天骄：二十岁左右白衣青年，身形修长，玉冠束发，眉眼锋利，银纹宗门长袍
+- 断魂崖：陡峭黑岩断崖，崖边一株枯树，崖下深不见底的冷雾
+- 残破玉简：巴掌大的残破玉简，边缘焦黑，表面暗金云纹
 
-### 镜号 01  （关键帧链 K0–K2 → 2 个片段；全链同一 seed=2301）
+**说话人**
 
-**关键帧 K0 (首帧) — Z-Image Turbo 提示词**（复制下面代码块内的文字进 CLIPTextEncode）
-```
-电影感全景侧面平视，手持镜头急推向断崖边的冲击瞬间，画面左侧，约十六岁少年，清瘦，短束发，粗布外门弟子服，左眉有细疤，被隔空掌风击中，身体刚向后离地飞起，双臂本能护住怀中巴掌大的残破玉简，边缘焦黑，表面暗金云纹；画面右侧远处，二十岁左右白衣青年，身形修长，玉冠束发，眉眼锋利，银纹宗门长袍，单掌推出，衣袖被掌风震开；背景是陡峭黑岩断崖，崖边一株枯树，崖下深不见底的冷雾，狂风卷起碎叶与墨色尘雾。冷调月光从侧后方勾出两人轮廓，高反差夜景中有体积雾光穿过枯枝，气氛凛冽压迫。国风水墨与写实结合、冷色调、电影感、高反差夜景、冷调月光、体积雾光、胶片颗粒，画面干净，无文字、无水印、无多余人物、正确的手部与肢体结构。
-```
-参数（不进提示词，设在 KSampler / 空 latent 节点）：steps 9｜cfg 0｜1280×720｜固定seed=2301
+- 赵天骄 → S1：年轻男性中低音，冷静、傲慢、语速偏慢
+- 林越 → S2：年轻男性中音，受伤后气息不稳但意志坚定
 
-**关键帧 K1 — Z-Image Turbo 提示词**（复制下面代码块内的文字进 CLIPTextEncode）
-```
-电影感全景侧面平视，手持镜头急推向断崖边的冲击过程，画面左侧，约十六岁少年，清瘦，短束发，粗布外门弟子服，左眉有细疤，在半空中继续向后飞、正逼近崖边枯树但尚未撞上，双臂仍死死护住怀中巴掌大的残破玉简，边缘焦黑，表面暗金云纹；画面右侧远处，二十岁左右白衣青年，身形修长，玉冠束发，眉眼锋利，银纹宗门长袍，推出的一掌余势未收，衣袖仍被掌风掀开；背景是陡峭黑岩断崖，崖边一株枯树，崖下深不见底的冷雾，狂风卷起碎叶与墨色尘雾。冷调月光从侧后方勾出两人轮廓，高反差夜景中有体积雾光穿过枯枝，气氛凛冽压迫。国风水墨与写实结合、冷色调、电影感、高反差夜景、冷调月光、体积雾光、胶片颗粒，画面干净，无文字、无水印、无多余人物、正确的手部与肢体结构。
-```
-参数（不进提示词，设在 KSampler / 空 latent 节点）：steps 9｜cfg 0｜1280×720｜固定seed=2301
+| 镜号 | 时长 | 景别/机位 | 运镜 | 起点→过程→落点 | 台词/VO | 声音 | H3模式 |
+|---|---:|---|---|---|---|---|---|
+| 01 | 6s | 全景/侧面平视 | 快速小幅跟移 | 掌风命中→后飞→撞上枯树 | 无 | 掌风、撞木、崖风 | FL2VA |
+| 02 | 6s | 中景/低角度 | 慢速小幅推近 | 迈步逼近→停住俯视→说完冷笑 | 赵天骄：一个废物，也配觊觎宗门功法？ | 脚步、碎石、低弦 | FL2VA |
+| 03 | 6s | 近景/平视 | 慢速小幅推近 | 伏地喘息→撑起上身→攥紧玉简 | 林越：这功法……是我的。 | 呼吸、衣料、玉简轻鸣 | FL2VA |
+| 04 | 8s | 全景/侧面平视 | 快速跟移后向外下摇 | 抬腿蓄力→踹中→越崖坠落 | 林越（VO）：我不甘心…… | 踹击、碎石、风啸、弦乐骤停 | FL2VA |
 
-**关键帧 K2 (尾帧) — Z-Image Turbo 提示词**（复制下面代码块内的文字进 CLIPTextEncode）
-```
-电影感全景侧面平视，手持镜头急推到断崖边的撞击结果，画面左侧，约十六岁少年，清瘦，短束发，粗布外门弟子服，左眉有细疤，重重撞在崖边枯树上，身体弓起，嘴角溅出血迹，双臂仍死死护住怀中巴掌大的残破玉简，边缘焦黑，表面暗金云纹；画面右侧远处，二十岁左右白衣青年，身形修长，玉冠束发，眉眼锋利，银纹宗门长袍，掌势收回，冷眼看着少年撞上枯树；背景是陡峭黑岩断崖，崖边一株枯树，崖下深不见底的冷雾，狂风卷起碎叶与墨色尘雾。冷调月光从侧后方勾出两人轮廓，高反差夜景中有体积雾光穿过枯枝，气氛凛冽压迫。国风水墨与写实结合、冷色调、电影感、高反差夜景、冷调月光、体积雾光、胶片颗粒，画面干净，无文字、无水印、无多余人物、正确的手部与肢体结构。
-```
-参数（不进提示词，设在 KSampler / 空 latent 节点）：steps 9｜cfg 0｜1280×720｜固定seed=2301
+## 镜号 01
 
-**片段 1 视频提示词 (LTX-2.3 FLF2V, K0→K1，含台词/旁白)**（整段喂给 LTX-2.3，绝不喂 Z-Image）
-```
-全景侧面平视，手持镜头随掌风爆发急促推近并轻微震动；狂风把雾气和碎叶横扫过断崖边，掌力已撞上林越胸口，他向后离地飞出、在半空继续后飞，双臂收紧护住怀中玉简，逐渐逼近崖边枯树，赵天骄的衣袂在远处被风拉直。掌风闷响、衣料撕裂声和崖下风啸连续压过画面，低沉鼓点随爆发短促下沉。约2秒，整段是被击飞、腾空后掠。画面无字幕、无水印、无台词文字，动作连贯、无闪烁。
+**模式与请求参数**：MiniMax-H3 FL2VA｜duration=6｜resolution=2K｜ratio=adaptive
+
+**Picture 1 / K0 首帧 — Z-Image Turbo**
+
+```text
+电影感全景侧面平视，画面左侧是约十六岁少年，清瘦，短束发，粗布外门弟子服，左眉有细疤，胸口刚被隔空掌风命中，身体开始向后离地，双臂本能护住巴掌大的残破玉简，边缘焦黑，表面暗金云纹；画面右侧是二十岁左右白衣青年，身形修长，玉冠束发，眉眼锋利，银纹宗门长袍，单掌向前推出。环境为陡峭黑岩断崖，崖边一株枯树，崖下深不见底的冷雾，碎石和衣袂被掌风掀起。冷调月光从侧后方勾出轮廓，体积雾穿过枯枝。国风水墨与写实结合，冷色调电影感，高反差夜景，细腻胶片颗粒。画面干净，无文字、无水印、无多余人物，正确的手部与肢体结构。
 ```
 
-**片段 2 视频提示词 (LTX-2.3 FLF2V, K1→K2，含台词/旁白)**（整段喂给 LTX-2.3，绝不喂 Z-Image）
-```
-全景侧面平视，手持镜头继续急推并跟住撞击点；狂风不减，白衣的林越背部重重砸在枯树上，枯枝剧烈摇晃、碎屑和尘土炸开，他嘴角溅血却仍抱紧玉简，赵天骄在远处收掌冷眼旁观。撞木闷响、枯枝折裂声和风啸叠在一起，低沉鼓点在撞击瞬间收束成一记重音。约2秒，前段贴近枯树、后段猛烈撞停。画面无字幕、无水印、无台词文字，动作连贯、无闪烁。
+参数：steps 9｜cfg 0｜1280×720｜固定 seed=2301
+
+**Picture 2 / K1 尾帧 — Z-Image Turbo**
+
+```text
+电影感全景侧面平视，画面左侧是约十六岁少年，清瘦，短束发，粗布外门弟子服，左眉有细疤，背部重重撞在崖边枯树上，身体弓起，嘴角溅血，双臂仍护住巴掌大的残破玉简，边缘焦黑，表面暗金云纹；画面右侧是二十岁左右白衣青年，身形修长，玉冠束发，眉眼锋利，银纹宗门长袍，已经收掌并冷眼旁观。环境为陡峭黑岩断崖，崖边枯树剧烈弯折，崖下深不见底的冷雾，断枝和碎石悬在撞击后的空气中。冷调月光从侧后方勾出轮廓，体积雾穿过枯枝。国风水墨与写实结合，冷色调电影感，高反差夜景，细腻胶片颗粒。画面干净，无文字、无水印、无多余人物，正确的手部与肢体结构。
 ```
 
-### 镜号 02  （关键帧链 K0–K1 → 1 个片段；全链同一 seed=2302）
+参数：steps 9｜cfg 0｜1280×720｜固定 seed=2301
 
-**关键帧 K0 (首帧) — Z-Image Turbo 提示词**（复制下面代码块内的文字进 CLIPTextEncode）
-```
-电影感中景低角度仰视，镜头缓慢跟移在断崖夜风中，画面下方前景，约十六岁少年，清瘦，短束发，粗布外门弟子服，左眉有细疤，倒在枯树旁喘息，嘴角带血，怀中露出巴掌大的残破玉简，边缘焦黑，表面暗金云纹；画面上方右侧，二十岁左右白衣青年，身形修长，玉冠束发，眉眼锋利，银纹宗门长袍，从墨色风雾里刚迈出第一步，目光向下压向少年；环境为陡峭黑岩断崖，崖边一株枯树，崖下深不见底的冷雾，碎石散在两人之间。冷调月光从赵天骄身后形成侧逆光，体积雾光切开深蓝夜色，压迫感强。国风水墨与写实结合、冷色调、电影感、高反差夜景、冷调月光、体积雾光、胶片颗粒，画面干净，无文字、无水印、无多余人物、正确的手部与肢体结构。
-```
-参数（不进提示词，设在 KSampler / 空 latent 节点）：steps 9｜cfg 0｜1280×720｜固定seed=2302
+**MiniMax-H3 FL2VA prompt**
 
-**关键帧 K1 (尾帧) — Z-Image Turbo 提示词**（复制下面代码块内的文字进 CLIPTextEncode）
-```
-电影感中景低角度仰视，镜头缓慢跟移到断崖夜风中的逼近终点，画面下方前景，约十六岁少年，清瘦，短束发，粗布外门弟子服，左眉有细疤，倒在枯树旁喘息，嘴角带血，怀中露出巴掌大的残破玉简，边缘焦黑，表面暗金云纹；画面上方右侧，二十岁左右白衣青年，身形修长，玉冠束发，眉眼锋利，银纹宗门长袍，停在枯树旁俯视少年，嘴角带着轻蔑冷笑；环境为陡峭黑岩断崖，崖边一株枯树，崖下深不见底的冷雾，碎石散在两人之间。冷调月光从赵天骄身后形成侧逆光，体积雾光切开深蓝夜色，压迫感强。国风水墨与写实结合、冷色调、电影感、高反差夜景、冷调月光、体积雾光、胶片颗粒，画面干净，无文字、无水印、无多余人物、正确的手部与肢体结构。
-```
-参数（不进提示词，设在 KSampler / 空 latent 节点）：steps 9｜cfg 0｜1280×720｜固定seed=2302
+```text
+How the reference pictures align with the target video — Picture 1 (from Shot 1) aligns with the 0.00-second mark of the target video; Picture 2 (from Shot 1) aligns with the 6.00-second mark of the target video.
 
-**片段 1 视频提示词 (LTX-2.3 FLF2V, K0→K1，含台词/旁白)**（整段喂给 LTX-2.3，绝不喂 Z-Image）
-```
-中景低角度仰视，镜头随赵天骄的脚步缓慢后移并保持压迫的仰角；风雾从他身后涌来，衣袖和银纹长袍边缘猎猎翻动，他一步一步逼近倒在枯树旁的林越，最后停住并微微垂眼，嘴角浮起冷笑，林越在画面下方艰难喘息、护住玉简。赵天骄冷笑着、语气轻蔑地说：“一个废物，也配觊觎宗门功法？”风声拉长，碎石被靴尖碾动，远处雷声低滚，弦乐保持冰冷低音。约5秒，前段缓慢逼近、后段停顿压迫。画面无字幕、无水印、无台词文字，动作连贯、无闪烁。
+integrated_multimodal_description: [Shot 1] Cinematic Chinese wuxia fantasy with realistic ink-wash texture, a wide side-view shot begins in the character positions, cold moonlight, black-rock cliff environment, and composition established by Picture 1. The camera tracks left with small amplitude at fast speed as the force of the palm strike drives the injured young disciple backward through the crosswind. His torso bends from the impact, both feet leave the ground, and he clamps both arms around the damaged jade slip while his robe and tied hair stream behind him. Loose gravel and dead leaves scatter along his path. He crosses the short distance to the dead tree, strikes the trunk hard with his back, and settles into the bent body position, character spacing, broken branches, and final composition established by Picture 2. The white-robed attacker remains planted in the background and lowers his striking hand as the disciple hits the tree.
+
+overall_soundscape: Strong cliff wind continues throughout the shot. A compressed palm-force boom is followed by rushing cloth, gravel scattering across rock, and a heavy wooden impact with branches cracking.
+
+non_diegetic_music: Low taiko pulses and sustained bass strings at a slow tempo rise under the backward flight, ending on one heavy accent at the tree impact.
 ```
 
-### 镜号 03  （关键帧链 K0–K1 → 1 个片段；全链同一 seed=2303）
+**API素材映射**：Picture 1 → `first_frame`; Picture 2 → `last_frame`.
 
-**关键帧 K0 (首帧) — Z-Image Turbo 提示词**（复制下面代码块内的文字进 CLIPTextEncode）
-```
-电影感近景平视，镜头从断崖枯树旁缓慢推近，约十六岁少年，清瘦，短束发，粗布外门弟子服，左眉有细疤，伏在地面喘息，嘴角带血，一只手刚摸向怀中巴掌大的残破玉简，边缘焦黑，表面暗金云纹，指节沾着尘土；背景虚化为陡峭黑岩断崖，崖边一株枯树，崖下深不见底的冷雾，狂风把他的乱发和衣襟吹向同一方向。冷调月光从侧上方照亮半张脸，浅景深中体积雾光掠过枯枝，情绪压低而倔强。国风水墨与写实结合、冷色调、电影感、高反差夜景、冷调月光、体积雾光、胶片颗粒，画面干净，无文字、无水印、无多余人物、正确的手部与肢体结构。
-```
-参数（不进提示词，设在 KSampler / 空 latent 节点）：steps 9｜cfg 0｜1024×1024｜固定seed=2303
+## 镜号 02
 
-**关键帧 K1 (尾帧) — Z-Image Turbo 提示词**（复制下面代码块内的文字进 CLIPTextEncode）
-```
-电影感近景平视，镜头从断崖枯树旁缓慢推近，约十六岁少年，清瘦，短束发，粗布外门弟子服，左眉有细疤，挣扎撑起上身，嘴角带血，一只手死死攥紧怀中巴掌大的残破玉简，边缘焦黑，表面暗金云纹，指节发白；背景虚化为陡峭黑岩断崖，崖边一株枯树，崖下深不见底的冷雾，狂风把他的乱发和衣襟吹向同一方向。冷调月光从侧上方照亮半张脸，浅景深中体积雾光掠过枯枝，情绪压低而倔强。国风水墨与写实结合、冷色调、电影感、高反差夜景、冷调月光、体积雾光、胶片颗粒，画面干净，无文字、无水印、无多余人物、正确的手部与肢体结构。
-```
-参数（不进提示词，设在 KSampler / 空 latent 节点）：steps 9｜cfg 0｜1024×1024｜固定seed=2303
+**模式与请求参数**：MiniMax-H3 FL2VA｜duration=6｜resolution=2K｜ratio=adaptive
 
-**片段 1 视频提示词 (LTX-2.3 FLF2V, K0→K1，含台词/旁白)**（整段喂给 LTX-2.3，绝不喂 Z-Image）
-```
-近景平视，镜头极慢推近林越的脸和手；风声在枯树间穿过，冷雾从他肩后流动，他先伏在地上急促喘息，随后用颤抖的手摸到怀中玉简，手指一点点收紧，身体艰难撑起，血从嘴角向下滑，他抬眼盯住赵天骄所在的方向。林越咬着牙、声音虚弱却执拗地说：“这功法……是我的。”衣料摩擦、短促喘息、玉简被攥紧的细微声响和远处崖风交织，低沉弦乐慢慢绷紧。约5秒，前段疼痛停滞、后段艰难起身。画面无字幕、无水印、无台词文字，动作连贯、无闪烁。
+**Picture 1 / K0 首帧 — Z-Image Turbo**
+
+```text
+电影感中景低角度仰视，画面下方前景是约十六岁少年，清瘦，短束发，粗布外门弟子服，左眉有细疤，倒在枯树旁急促喘息，怀中露出巴掌大的残破玉简，边缘焦黑，表面暗金云纹；画面上方远处是二十岁左右白衣青年，身形修长，玉冠束发，眉眼锋利，银纹宗门长袍，刚从风雾里迈出第一步。陡峭黑岩断崖、枯树和深不见底的冷雾保持清晰空间关系。冷调月光形成侧逆光，体积雾切开深蓝夜色。国风水墨与写实结合，冷色调电影感，高反差夜景，细腻胶片颗粒。画面干净，无文字、无水印、无多余人物。
 ```
 
-### 镜号 04  （关键帧链 K0–K1 → 1 个片段；全链同一 seed=2304）
+参数：steps 9｜cfg 0｜1280×720｜固定 seed=2302
 
-**关键帧 K0 (首帧) — Z-Image Turbo 提示词**（复制下面代码块内的文字进 CLIPTextEncode）
-```
-电影感中近景过肩俯视，镜头从赵天骄肩后轻微侧移，画面下方左侧，约十六岁少年，清瘦，短束发，粗布外门弟子服，左眉有细疤，半跪在枯树旁，怀中紧贴巴掌大的残破玉简，边缘焦黑，表面暗金云纹；画面右侧近景，二十岁左右白衣青年，身形修长，玉冠束发，眉眼锋利，银纹宗门长袍，正低头冷笑看向地上的少年；背景是陡峭黑岩断崖，崖边一株枯树，崖下深不见底的冷雾，崖线近在少年身后。冷调月光沿赵天骄肩线形成锋利侧逆光，体积雾光在两人之间翻涌，危险感逼近。国风水墨与写实结合、冷色调、电影感、高反差夜景、冷调月光、体积雾光、胶片颗粒，画面干净，无文字、无水印、无多余人物、正确的手部与肢体结构。
-```
-参数（不进提示词，设在 KSampler / 空 latent 节点）：steps 9｜cfg 0｜1280×720｜固定seed=2304
+**Picture 2 / K1 尾帧 — Z-Image Turbo**
 
-**关键帧 K1 (尾帧) — Z-Image Turbo 提示词**（复制下面代码块内的文字进 CLIPTextEncode）
-```
-电影感中近景过肩俯视，镜头从赵天骄肩后轻微侧移，画面下方左侧，约十六岁少年，清瘦，短束发，粗布外门弟子服，左眉有细疤，半跪在枯树旁，怀中紧贴巴掌大的残破玉简，边缘焦黑，表面暗金云纹；画面右侧近景，二十岁左右白衣青年，身形修长，玉冠束发，眉眼锋利，银纹宗门长袍，右脚后撤蓄力准备踹出，仍低头冷笑看向地上的少年；背景是陡峭黑岩断崖，崖边一株枯树，崖下深不见底的冷雾，崖线近在少年身后。冷调月光沿赵天骄肩线形成锋利侧逆光，体积雾光在两人之间翻涌，危险感逼近。国风水墨与写实结合、冷色调、电影感、高反差夜景、冷调月光、体积雾光、胶片颗粒，画面干净，无文字、无水印、无多余人物、正确的手部与肢体结构。
-```
-参数（不进提示词，设在 KSampler / 空 latent 节点）：steps 9｜cfg 0｜1280×720｜固定seed=2304
-
-**片段 1 视频提示词 (LTX-2.3 FLF2V, K0→K1，含台词/旁白)**（整段喂给 LTX-2.3，绝不喂 Z-Image）
-```
-中近景过肩俯视，镜头从赵天骄肩后缓慢侧移，压住半跪在崖线前的林越；狂风把两人的衣袂向崖外扯去，雾气从脚边翻上来，赵天骄低头冷笑，随后右脚向后半步撤开，身体重心下沉，准备发力，林越抱紧玉简，肩膀因疼痛和愤怒微微颤抖。风声骤然变尖，碎石在脚边滚动，靴底摩擦岩面的声音清晰突出，音乐短暂停住形成空拍。约3秒，整段是踹出前的冷酷蓄力。画面无字幕、无水印、无台词文字，动作连贯、无闪烁。
+```text
+电影感中景低角度仰视，画面下方前景是约十六岁少年，清瘦，短束发，粗布外门弟子服，左眉有细疤，仍倒在枯树旁并护住怀中残破玉简；画面上方近处是二十岁左右白衣青年，身形修长，玉冠束发，眉眼锋利，银纹宗门长袍，已经停在少年身前，垂眼俯视，嘴角保持轻蔑冷笑。陡峭黑岩断崖、枯树和深不见底的冷雾保持与首帧一致。冷调月光形成侧逆光，体积雾切开深蓝夜色。国风水墨与写实结合，冷色调电影感，高反差夜景，细腻胶片颗粒。画面干净，无文字、无水印、无多余人物。
 ```
 
-### 镜号 05  （关键帧链 K0–K2 → 2 个片段；全链同一 seed=2305；踹击→坠出连续动作，机位一致侧面平视）
+参数：steps 9｜cfg 0｜1280×720｜固定 seed=2302
 
-**关键帧 K0 (首帧) — Z-Image Turbo 提示词**（复制下面代码块内的文字进 CLIPTextEncode）
-```
-电影感全景侧面平视，镜头快速横移跟随断崖边的踹击瞬间，画面左侧，约十六岁少年，清瘦，短束发，粗布外门弟子服，左眉有细疤，抱紧怀中巴掌大的残破玉简，边缘焦黑，表面暗金云纹，身体贴近悬崖边线、正因逼近的攻击而绷紧；画面右侧，二十岁左右白衣青年，身形修长，玉冠束发，眉眼锋利，银纹宗门长袍，抬腿将要踹中少年，脚尖尚未接触，衣袂被狂风拉直；环境是陡峭黑岩断崖，崖边一株枯树，崖下深不见底的冷雾，碎石在脚边松动。冷调月光侧逆光拉出两人轮廓，体积雾光切开深蓝夜色，动作张力强烈。国风水墨与写实结合、冷色调、电影感、高反差夜景、冷调月光、体积雾光、胶片颗粒，画面干净，无文字、无水印、无多余人物、正确的手部与肢体结构。
-```
-参数（不进提示词，设在 KSampler / 空 latent 节点）：steps 9｜cfg 0｜1280×720｜固定seed=2305
+**MiniMax-H3 FL2VA prompt**
 
-**关键帧 K1 — Z-Image Turbo 提示词**（复制下面代码块内的文字进 CLIPTextEncode）
-```
-电影感全景侧面平视，镜头快速横移跟随断崖边的踹击命中，画面左侧，约十六岁少年，清瘦，短束发，粗布外门弟子服，左眉有细疤，抱紧怀中巴掌大的残破玉简，边缘焦黑，表面暗金云纹，被踹中后身体后弓、双脚离地，但还未越过悬崖边线；画面右侧，二十岁左右白衣青年，身形修长，玉冠束发，眉眼锋利，银纹宗门长袍，收势的一脚已经踹实少年，衣袂被狂风拉直；环境是陡峭黑岩断崖，崖边一株枯树，崖下深不见底的冷雾，碎石在脚边震起。冷调月光侧逆光拉出两人轮廓，体积雾光切开深蓝夜色，动作张力强烈。国风水墨与写实结合、冷色调、电影感、高反差夜景、冷调月光、体积雾光、胶片颗粒，画面干净，无文字、无水印、无多余人物、正确的手部与肢体结构。
-```
-参数（不进提示词，设在 KSampler / 空 latent 节点）：steps 9｜cfg 0｜1280×720｜固定seed=2305
+```text
+How the reference pictures align with the target video — Picture 1 (from Shot 1) aligns with the 0.00-second mark of the target video; Picture 2 (from Shot 1) aligns with the 6.00-second mark of the target video.
 
-**关键帧 K2 (尾帧) — Z-Image Turbo 提示词**（复制下面代码块内的文字进 CLIPTextEncode）
-```
-电影感全景侧面平视，镜头快速横移并轻微下沉跟随断崖边的坠出瞬间，画面右侧，二十岁左右白衣青年，身形修长，玉冠束发，眉眼锋利，银纹宗门长袍，收势立在崖边冷眼旁观；画面左侧，约十六岁少年，清瘦，短束发，粗布外门弟子服，左眉有细疤，抱紧怀中巴掌大的残破玉简，边缘焦黑，表面暗金云纹，已越过悬崖边线、整个人向崖外坠出、在空中开始失衡；环境是陡峭黑岩断崖，崖边一株枯树，崖下深不见底的冷雾，碎石随之被卷落。冷调月光侧逆光拉出两人轮廓，体积雾光从崖下向上翻涌，失重感清晰。国风水墨与写实结合、冷色调、电影感、高反差夜景、冷调月光、体积雾光、胶片颗粒，画面干净，无文字、无水印、无多余人物、正确的手部与肢体结构。
-```
-参数（不进提示词，设在 KSampler / 空 latent 节点）：steps 9｜cfg 0｜1280×720｜固定seed=2305
+integrated_multimodal_description: [Shot 1] Cinematic Chinese wuxia fantasy, a medium low-angle shot begins in the composition and cold moonlit cliff environment established by Picture 1. The camera pushes in with small amplitude at slow speed as the tall white-robed young man with a cold, controlled baritone (S1) walks toward the injured disciple. Each measured step grinds loose stones beneath his boots while his silver-trimmed robe snaps in the crosswind. He slows, stops beside the dead tree, lowers his gaze, and settles into the final spacing, posture, and contemptuous expression established by Picture 2. After a brief silent pause, the white-robed young man (S1) says in a quiet, disdainful tone: <d>[Chinese] 一个废物，也配觊觎宗门功法？</d> His lips close after the final syllable and the cold smile remains.
 
-**片段 1 视频提示词 (LTX-2.3 FLF2V, K0→K1，含台词/旁白)**（整段喂给 LTX-2.3，绝不喂 Z-Image）
-```
-全景侧面平视，镜头随赵天骄抬腿快速横移并轻微跟随；狂风在断崖边骤然增强，冷雾和碎叶横掠画面，赵天骄抬腿、发力、一脚踹出，林越被踹得身体猛然后弓，双脚离地却还没有越出崖线，仍死死抱着玉简，碎石在两人脚边震起，衣袂和乱发剧烈翻飞。掌风闷响、衣袂猎猎、靴底踏石声和崖下风啸铺满声场，低沉弦乐在踹实瞬间下压。约3秒，前段短促蓄力、后段猛烈命中。画面无字幕、无水印、无台词文字，动作连贯、无闪烁。
+overall_soundscape: Strong wind moves continuously over the cliff. Even footsteps approach across black rock, loose gravel rolls beneath each boot, and robe fabric snaps sharply before the movement stops for the spoken line.
+
+non_diegetic_music: Sustained low strings at a slow tempo increase gradually during the approach, then hold one quiet unresolved note beneath the dialogue.
 ```
 
-**片段 2 视频提示词 (LTX-2.3 FLF2V, K1→K2，含台词/旁白)**（整段喂给 LTX-2.3，绝不喂 Z-Image）
-```
-全景侧面平视，镜头随坠势轻微下沉并向崖外跟摇；白衣的赵天骄收势立在崖边冷眼旁观，白衣少年林越抱紧玉简越过崖线、整个人向崖外坠出，身体在空中开始失衡旋转，衣襟和乱发向上翻飞，碎石从他身旁滚落进深雾。随着林越坠出崖线，林越（画外音，压抑而不甘）：“我不甘心……”崖风呼啸、碎石坠落声和低沉弦乐一起拉长，声音空间从近处扩向空旷。约4秒，前段越线失重、后段坠向冷雾。画面无字幕、无水印、无台词文字，动作连贯、无闪烁。
+**API素材映射**：Picture 1 → `first_frame`; Picture 2 → `last_frame`.
+
+## 镜号 03
+
+**模式与请求参数**：MiniMax-H3 FL2VA｜duration=6｜resolution=2K｜ratio=adaptive
+
+**Picture 1 / K0 首帧 — Z-Image Turbo**
+
+```text
+电影感近景平视，约十六岁少年，清瘦，短束发，粗布外门弟子服，左眉有细疤，伏在黑岩地面急促喘息，嘴角带血，一只手刚触到怀中巴掌大的残破玉简，边缘焦黑，表面暗金云纹；背景虚化为枯树、黑岩断崖和深冷雾，狂风把乱发和衣襟吹向同一方向。冷调月光照亮半张脸，体积雾从肩后流过。国风水墨与写实结合，冷色调电影感，高反差夜景，细腻胶片颗粒。画面中只有林越，无文字、无水印，正确的手部结构。
 ```
 
-### 镜号 06  （关键帧链 K0–K1 → 1 个片段；全链同一 seed=2306；与镜号 05 之间为切镜，机位改高角度俯视）
+参数：steps 9｜cfg 0｜1280×720｜固定 seed=2303
 
-**关键帧 K0 (首帧) — Z-Image Turbo 提示词**（复制下面代码块内的文字进 CLIPTextEncode）
-```
-电影感远景高角度俯视，镜头从断崖上方向下摇，画面中央下方，约十六岁少年，清瘦，短束发，粗布外门弟子服，左眉有细疤，抱着怀中巴掌大的残破玉简，边缘焦黑，表面暗金云纹，身影刚越出崖外、还清晰悬在冷雾上方；画面上方崖边，二十岁左右白衣青年，身形修长，玉冠束发，眉眼锋利，银纹宗门长袍，静立在崖边，衣袂被风吹起；环境为陡峭黑岩断崖，崖边一株枯树，崖下深不见底的冷雾。冷调月光照出崖壁锋利边缘，体积雾光从下方托起坠落身影，宿命感强。国风水墨与写实结合、冷色调、电影感、高反差夜景、冷调月光、体积雾光、胶片颗粒，画面干净，无文字、无水印、无多余人物、正确的手部与肢体结构。
-```
-参数（不进提示词，设在 KSampler / 空 latent 节点）：steps 9｜cfg 0｜1280×720｜固定seed=2306
+**Picture 2 / K1 尾帧 — Z-Image Turbo**
 
-**关键帧 K1 (尾帧) — Z-Image Turbo 提示词**（复制下面代码块内的文字进 CLIPTextEncode）
+```text
+电影感近景平视，约十六岁少年，清瘦，短束发，粗布外门弟子服，左眉有细疤，已经用手臂撑起上身，嘴角带血，另一只手死死攥紧怀中巴掌大的残破玉简，边缘焦黑，表面暗金云纹，抬眼坚定地看向画外；背景虚化为枯树、黑岩断崖和深冷雾，狂风把乱发和衣襟吹向同一方向。冷调月光照亮半张脸，体积雾从肩后流过。国风水墨与写实结合，冷色调电影感，高反差夜景，细腻胶片颗粒。画面中只有林越，无文字、无水印，正确的手部结构。
 ```
-电影感远景高角度俯视，镜头从断崖上方向下摇到深雾终点，画面中央下方，约十六岁少年，清瘦，短束发，粗布外门弟子服，左眉有细疤，抱着怀中巴掌大的残破玉简，边缘焦黑，表面暗金云纹，身影被崖下冷雾吞没、只剩模糊轮廓；画面上方崖边，二十岁左右白衣青年，身形修长，玉冠束发，眉眼锋利，银纹宗门长袍，静立在崖边，衣袂被风吹起；环境为陡峭黑岩断崖，崖边一株枯树，崖下深不见底的冷雾。冷调月光照出崖壁锋利边缘，体积雾光从下方托起坠落身影，宿命感强。国风水墨与写实结合、冷色调、电影感、高反差夜景、冷调月光、体积雾光、胶片颗粒，画面干净，无文字、无水印、无多余人物、正确的手部与肢体结构。
-```
-参数（不进提示词，设在 KSampler / 空 latent 节点）：steps 9｜cfg 0｜1280×720｜固定seed=2306
 
-**片段 1 视频提示词 (LTX-2.3 FLF2V, K0→K1，含台词/旁白)**（整段喂给 LTX-2.3，绝不喂 Z-Image）
+参数：steps 9｜cfg 0｜1280×720｜固定 seed=2303
+
+**MiniMax-H3 FL2VA prompt**
+
+```text
+How the reference pictures align with the target video — Picture 1 (from Shot 1) aligns with the 0.00-second mark of the target video; Picture 2 (from Shot 1) aligns with the 6.00-second mark of the target video.
+
+integrated_multimodal_description: [Shot 1] Cinematic Chinese wuxia fantasy, a close eye-level shot begins in the framing, injured appearance, cold moonlight, and ground position established by Picture 1. The camera pushes in with small amplitude at slow speed as the young disciple with a strained but determined voice (S2) drags a shallow breath into his chest. His fingers find the damaged jade slip, curl around its scorched edge, and tighten until his knuckles pale. He plants his other palm against the rock, lifts his shoulders, and gradually pushes his upper body upright while blood moves slowly from the corner of his mouth. He raises his gaze toward the unseen attacker and settles into the supported posture, clenched hand, and final composition established by Picture 2. The young disciple (S2) says through uneven breathing but with firm emphasis: <d>[Chinese] 这功法……是我的。</d> His lips close as he continues staring upward.
+
+overall_soundscape: Cliff wind remains present but slightly muffled in the close framing. Strained breathing, cloth scraping over stone, a palm pressing into gravel, and a faint resonant vibration from the jade slip are clearly audible.
+
+non_diegetic_music: A single sustained cello note at a slow tempo enters as his hand closes around the jade slip and grows slightly louder beneath the dialogue.
 ```
-远景高角度俯视，镜头从崖边向下缓慢摇落并逐渐拉开空间；狂风把冷雾向上卷起，林越的身影抱着玉简向深处坠去，身体旋转半圈后迅速变小，最终被浓雾吞没，只留下崖边枯树剧烈摇晃和赵天骄静立不动的剪影。崖风呼啸从近处扩散到空旷深谷，碎石连续坠落并在雾中消失，音乐只剩低频余震。约5秒，前段延续失重、后段归于空旷死寂。画面无字幕、无水印、无台词文字，动作连贯、无闪烁。
+
+**API素材映射**：Picture 1 → `first_frame`; Picture 2 → `last_frame`.
+
+## 镜号 04
+
+**模式与请求参数**：MiniMax-H3 FL2VA｜duration=8｜resolution=2K｜ratio=adaptive
+
+**Picture 1 / K0 首帧 — Z-Image Turbo**
+
+```text
+电影感全景侧面平视，画面左侧是约十六岁少年，清瘦，短束发，粗布外门弟子服，左眉有细疤，抱紧残破玉简站在悬崖边线前，身体因伤势绷紧；画面右侧是二十岁左右白衣青年，身形修长，玉冠束发，眉眼锋利，银纹宗门长袍，右脚后撤、抬腿蓄力，脚尖尚未触及少年。环境为陡峭黑岩断崖，崖边一株枯树，崖下深不见底的冷雾，碎石在两人脚边松动。冷调月光侧逆光勾出轮廓，体积雾向上翻卷。国风水墨与写实结合，冷色调电影感，高反差夜景，细腻胶片颗粒。画面干净，无文字、无水印、无多余人物，正确的肢体结构。
 ```
+
+参数：steps 9｜cfg 0｜1280×720｜固定 seed=2304
+
+**Picture 2 / K1 尾帧 — Z-Image Turbo**
+
+```text
+电影感全景侧面平视并略向崖外俯看，画面右侧是二十岁左右白衣青年，身形修长，玉冠束发，眉眼锋利，银纹宗门长袍，已经收腿立在崖边冷眼旁观；画面左下方是约十六岁少年，清瘦，短束发，粗布外门弟子服，左眉有细疤，双臂抱紧残破玉简，已经越过悬崖边线并向冷雾中坠落，身体开始失衡。环境为陡峭黑岩断崖、崖边枯树和深不见底的冷雾，碎石随少年一起坠下。冷调月光侧逆光勾出轮廓，体积雾从崖下翻卷。国风水墨与写实结合，冷色调电影感，高反差夜景，细腻胶片颗粒。画面干净，无文字、无水印、无多余人物，正确的肢体结构。
+```
+
+参数：steps 9｜cfg 0｜1280×720｜固定 seed=2304
+
+**MiniMax-H3 FL2VA prompt**
+
+```text
+How the reference pictures align with the target video — Picture 1 (from Shot 1) aligns with the 0.00-second mark of the target video; Picture 2 (from Shot 1) aligns with the 8.00-second mark of the target video.
+
+integrated_multimodal_description: [Shot 1] Cinematic Chinese wuxia fantasy, a wide side-view shot begins in the character poses, cliff-edge spacing, cold moonlight, and composition established by Picture 1. The camera tracks left with small amplitude at fast speed as the white-robed attacker shifts his weight forward, drives his raised leg outward, and strikes the injured disciple in the torso. The disciple's body bends around the impact, both feet leave the rock, and his arms lock around the damaged jade slip. Loose gravel bursts from the cliff edge as the attacker retracts his leg. The camera continues tracking the disciple, then tilts down with small amplitude as he crosses the cliff line, loses balance in open air, and begins falling into the rising fog. The attacker remains at the edge while the disciple settles into the falling position, scale, spacing, and final composition established by Picture 2. As the disciple falls, the young disciple (S2) says in an off-screen voiceover with suppressed rage: <d>[Chinese] 我不甘心……</d> while his on-screen lips remain completely closed.
+
+overall_soundscape: Violent cliff wind fills the stereo field. A sharp boot impact is followed by a body thud, cloth snapping, gravel breaking loose, and stones falling into the deep ravine as the wind opens into a larger hollow space.
+
+non_diegetic_music: Low strings and a slow taiko pulse build during the kick, swell as the disciple crosses the cliff edge, and stop abruptly after the voiceover, leaving only wind for the final second.
+```
+
+**API素材映射**：Picture 1 → `first_frame`; Picture 2 → `last_frame`.

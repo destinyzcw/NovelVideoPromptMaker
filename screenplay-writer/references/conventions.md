@@ -7,9 +7,10 @@ needs a structure the base template doesn't cover, or when adapting messy source
 1. Scene heading details
 2. Action-line style
 3. Dialogue variants (VO / OS / parenthetical)
-4. Transitions and special sequences (montage, intercut, flashback)
-5. Mode B adaptation heuristics
-6. Worked examples
+4. H3 audiovisual cues and timing
+5. Transitions and special sequences (montage, intercut, flashback)
+6. Mode B adaptation heuristics
+7. Worked examples
 
 ## 1. Scene heading details
 
@@ -39,7 +40,43 @@ Keep one location per scene. When characters move to a new place, start a new sc
 - **Parenthetical (语气/动作提示)**: put a short delivery cue in `（）` before the line —
   `林越（冷笑）：原来如此。` Use sparingly; over-directing dialogue is a smell.
 
-## 4. Transitions and special sequences
+For MiniMax-H3, the distinction is operational:
+
+- On-camera dialogue becomes a physical speaking event with lip movement.
+- `OS` keeps the same speaker identity and voice but the speaker is outside the current frame.
+- `VO` becomes an off-screen voiceover; if that character is visible, the H3 prompt must state
+  that their lips remain completely closed.
+- Preserve the exact line downstream. H3 dialogue uses
+  `<d>[Language] exact original dialogue.</d>`, with the language tag derived from the source;
+  translation or paraphrase changes the performed line.
+
+## 4. H3 audiovisual cues and timing
+
+H3 produces synchronized audiovisual clips lasting 4–15 seconds. The screenplay should expose
+enough timing and sound intent for the storyboard stage without turning into a technical prompt.
+
+- Write one visible action/reaction beat per `▲` line.
+- Let a dialogue beat include preparation, delivery, and a visible post-line reaction when useful.
+- Split a long speech at a natural pause if it cannot be spoken comfortably within one shot.
+- Use `【环境音：…】` for continuing room tone or location sound.
+- Use `【音效：…】` for synchronized physical events such as footsteps, impacts, fabric, breath,
+  doors, weapons, water, or debris.
+- Use `【配乐：…】` only for audience-only score. Describe instruments, tempo, rhythm, entry,
+  swell, stop, or fade. Music heard by characters belongs in `【环境音】` or the action line.
+- Avoid vague cues such as `【紧张的声音】`; write the actual audible source.
+
+Example:
+
+```markdown
+▲ 赵天骄缓步逼近，靴底碾过松动碎石。
+【环境音：持续强风穿过断崖，远处闷雷】
+【音效：碎石被靴底碾动，衣袂剧烈拍打】
+赵天骄（冷笑）：一个废物，也配觊觎宗门功法？
+▲ 他说完后停住，垂眼等待林越的反应。
+【配乐：低音弦乐以慢速持续音加压，台词结束后留出半秒空拍】
+```
+
+## 5. Transitions and special sequences
 
 - **Transition cue**: on its own line in `【】` — `【叠化】`, `【黑场】`, `【硬切】`.
 - **Montage (蒙太奇)**: head the block with `【蒙太奇开始】` / `【蒙太奇结束】` and list beats
@@ -48,7 +85,7 @@ Keep one location per scene. When characters move to a new place, start a new sc
 - **Flashback (闪回)**: wrap with `【闪回开始】` / `【闪回结束】`; put the era in the scene
   heading time slot if it helps (`3-4 老宅 1998·夜 内`).
 
-## 5. Mode B adaptation heuristics
+## 6. Mode B adaptation heuristics
 
 When converting finished prose:
 
@@ -62,7 +99,7 @@ When converting finished prose:
 - **Scene segmentation**: cut a new scene at each change of location or significant time jump,
   even if the prose runs them together in one paragraph.
 
-## 6. Worked examples
+## 7. Worked examples
 
 ### Mode A — from a one-line premise
 

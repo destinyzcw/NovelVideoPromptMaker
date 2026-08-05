@@ -36,7 +36,9 @@ reference images:
   `仅参考图片1的画面风格，绝不参考其中的任何物品和构图，`
 - **Positions 2+ = subject references** — character, then props, then scene — in a fixed order.
   Reference them by number in the prompt text (`图片2为林越的相貌，图片3为门厅`).
-- **Cap at ~5 references total.** Beyond that, models blur identities; drop the least important.
+- **Cap at ~5 references total for ordinary image models.** MiniMax-H3 Ref2VA is a deliberate
+  exception: it supports up to 9 images plus video/audio references, but every asset must be
+  assigned a specific role in the H3 prompt. More files are not automatically better.
 - **White-background asset sheets**: instruct the model to strip the pure-white background so the
   subject blends naturally into the shot's environment
   (`剥离图片2的纯白背景，使人物自然融入雨夜门厅`).
@@ -60,8 +62,10 @@ When a shot will drive a video (image-to-video), you often need two stills:
 - **Last frame (尾帧 / last)** — the closing freeze: the *result* after the action completes.
   Emphasize the outcome state.
 
-Both inherit the same art style, character references, and scene; only the described moment
-differs. Keep the core content prompt identical and swap just the action-phase clause.
+Both inherit the same art style, character references, scene, aspect ratio, and lighting; only
+the described moment differs. For MiniMax-H3 FL2VA these become Picture 1 at 0.00 seconds and
+Picture 2 at the declared 4–15 second endpoint. The H3 prompt must describe the continuous path
+between them rather than merely repeating the two static states.
 
 ## 5. Style/content conflict handling
 

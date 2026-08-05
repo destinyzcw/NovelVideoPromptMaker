@@ -16,7 +16,7 @@ standalone skills and stripped of that project's built-in image/video generation
 | Skill | Stage | Input | Output |
 |-------|-------|-------|--------|
 | [`screenplay-writer`](screenplay-writer/SKILL.md) | 1 — 剧本 | Story synopsis/outline, or existing prose | Markdown screenplay: episodes → scenes → dialogue |
-| [`storyboard-prompt`](storyboard-prompt/SKILL.md) | 2 — 分镜图 prompt | A screenplay scene + visual assets | Shot-list table + a keyframe chain (K0…Kn) of image prompts + one FLF2V video prompt per segment |
+| [`storyboard-prompt`](storyboard-prompt/SKILL.md) | 2 — 分镜图 + H3 prompt | A screenplay scene + visual/audio references | Shot list + H3 endpoint/reference plan + native audiovisual prompt |
 | [`storyboard-render-loop`](storyboard-render-loop/SKILL.md) | 3 — render + QA | A novel excerpt (orchestrates 1+2) + a ComfyUI endpoint | Rendered storyboard PNGs, vision-QA'd and retried, plus a state manifest |
 
 They chain: `screenplay-writer` output feeds `storyboard-prompt`; `storyboard-render-loop`
@@ -26,7 +26,7 @@ orchestrates both and then renders.
 story / prose ──▶ screenplay-writer ──▶ 剧本 (scenes+dialogue)
                                             │
                                             ▼
-                       storyboard-prompt ──▶ 分镜脚本 + 关键帧链(K0…Kn) + 逐段视频提示
+                       storyboard-prompt ──▶ 分镜脚本 + H3端点/参考素材 + 原生音视频提示
                                             │
                                             ▼
                   storyboard-render-loop ──▶ ComfyUI Z-Image Turbo ──▶ keyframes ──▶ vision QA ──▶ revise/retry
@@ -45,22 +45,21 @@ story / prose ──▶ screenplay-writer ──▶ 剧本 (scenes+dialogue)
   deciding which appearance changes need a separate anchor vs. words.
 - Shot design driven by drama: 正反打 for dialogue, 跟拍/手持 for action, 特写+慢推 for
   emotion; per shot picks 景别 / 时长 / 运镜 / 机位 / 关键帧节拍 / 对白.
-- Per shot it emits a **keyframe chain** `K0 → K1 → … → Kn` of Z-Image Turbo image prompts (首帧=K0,
-  尾帧=Kn; every keyframe a full standalone prompt, identical to its neighbours except the action
-  phase, the **whole chain sharing one seed**) — plus **one LTX-2.3 FLF2V video prompt per adjacent
-  pair** `Ki→Ki+1`. Because FLF2V only interpolates cleanly across a **small** motion delta, a shot
-  is rendered as **several short clips (~2–4s) concatenated**, not one big first→last morph: big
-  motions (a fall, a body flung across frame, a large pose change) get an intermediate keyframe
-  inserted; simple/near-static shots stay 2 keyframes = 1 clip. The shared boundary keyframe is
-  rendered once and reused as the join, and each clip **keeps the scene's narration and dialogue**
-  (LTX-2.3 generates synchronized audio incl. speech; dialogue/VO attach to the clip where they
-  occur, with speaker + tone).
+- Selects the correct **MiniMax-H3 mode** per shot: FL2VA for exact first/last storyboard
+  endpoints, I2VA/L2VA for one-sided anchors, T2VA for unconstrained inserts, or Ref2VA for
+  character/style/motion/camera/voice references. A normal FL2VA shot uses **K0 / Picture 1**
+  and **K1 / Picture 2** plus one continuous 4–15 second audiovisual prompt—not a chain of
+  micro-clips.
+- Follows MiniMax's official Context-IR schemas: English timeline prose, stable `(S1)` speaker
+  IDs, verbatim original-language dialogue inside `<d>[Language] ...</d>`, explicit VO lip
+  closure, `overall_soundscape`, and `non_diegetic_music`. Ref2VA additionally emits subject
+  definitions, task summary, retention analysis, detailed description, and ordered asset roles.
 - Composes the image prompts for the default backend — **Z-Image Turbo (Tongyi-MAI) in ComfyUI**:
   long natural-language prompts, identity carried by verbatim anchor phrases (the base model is
   text-to-image with no reference-image input), exclusions baked into the positive prompt (negative
   prompts are ignored / CFG=0), lighting as its own clause, and suggested ComfyUI parameters —
-  **without calling any model.** Reference playbooks are included for Z-Image Turbo, LTX-2.3 video,
-  and other reference-capable image backends.
+  **without calling any model.** Reference playbooks are included for Z-Image Turbo,
+  MiniMax-H3 Base/Ref2VA prompting, and other reference-capable image backends.
 
 ### storyboard-render-loop (novel → rendered frames)
 - **Orchestrator** that runs the two skills above on a novel excerpt, then renders every shot
@@ -70,8 +69,8 @@ story / prose ──▶ screenplay-writer ──▶ 剧本 (scenes+dialogue)
   keyframe is small/interpolatable → pass, or revise the prompt (using Z-Image tactics) and retry
   until solid or the retry limit (default 3) is hit; a too-big delta triggers inserting an extra
   keyframe, an overloaded frame triggers a shot split.
-- Keeps a resumable `render-state.json` manifest (keyframes[] with prompt/seed/attempts/verdict +
-  segments[] with per-clip video prompts), renders each shared boundary keyframe once, fails loudly
+- Keeps a resumable `render-state.json` manifest (endpoint keyframes with prompt/seed/attempts/
+  verdict plus the H3 mode/request/prompt), fails loudly
   on endpoint/config errors, and produces a final status report.
 - Ships a **stdlib-only** ComfyUI client (`scripts/comfy_zimage.py`), a default API workflow
   (`scripts/zimage_workflow.api.json`), and a QA subagent prompt (`agents/qa-inspect.md`).
@@ -89,7 +88,7 @@ NovelVideoPromptMaker/
 │   ├── SKILL.md
 │   └── references/
 │       ├── z-image-turbo.md               # DEFAULT image backend: Z-Image Turbo in ComfyUI
-│       ├── ltx2-video.md                  # DEFAULT video backend: LTX-2.3 FLF2V (dialogue/VO/audio)
+│       ├── minimax-h3-video.md            # DEFAULT H3 Base/Ref2VA audiovisual prompt contract
 │       └── prompt-composition.md          # general playbook for reference-capable backends
 ├── storyboard-render-loop/
 │   ├── SKILL.md
@@ -100,7 +99,7 @@ NovelVideoPromptMaker/
 │   ├── references/
 │   │   ├── comfyui-api.md                  # endpoints, workflow export, params, troubleshooting
 │   │   ├── z-image-turbo.md               # image prompt playbook (shared with storyboard-prompt)
-│   │   └── ltx2-video.md                   # LTX-2.3 FLF2V video prompt playbook (shared)
+│   │   └── minimax-h3-video.md             # MiniMax-H3 prompt playbook (shared)
 │   └── .env.example                        # COMFYUI_HOST for the remote GPU box
 └── examples/                               # real test input/output
     ├── screenplay-writer/{input,output}.md

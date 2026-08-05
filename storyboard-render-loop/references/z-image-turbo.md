@@ -109,23 +109,21 @@ Note how each prompt is one flowing paragraph, embeds the fixed anchor phrases f
 puts lighting in its own clause, and ends with the constraint line — no reference images, no
 negative prompt. The `参数` line always lives **outside** the code block.
 
-## 7. Keyframe chain + per-segment motion prompts
+## 7. MiniMax-H3 endpoint frames
 
-Each shot yields a **keyframe chain** of Z-Image prompts `K0 → K1 → … → Kn`
-(首帧=K0, 尾帧=Kn) plus **one motion prompt per adjacent pair** for the video model.
-A shot is *not* a single 首帧/尾帧 pair: FLF2V interpolates cleanly only across a
-**small** delta, so any big motion (a fall, a body flung across frame, a large
-camera move, a full pose swap) gets an **intermediate keyframe** inserted, and each
-`Ki → Ki+1` becomes one short clip. Simple/near-static shots stay 2 keyframes = 1 clip.
+For the default MiniMax-H3 FL2VA workflow, each shot normally needs two rendered Z-Image frames:
 
-**How to write the chain.** Keep every keyframe prompt **byte-for-byte identical
-except the action/expression clause** (and the framing clause if the camera moves in
-that gap). Same anchors, same environment, same lighting, same style, same
-constraints, and **one shared seed for the whole chain** — so the stills read as one
-continuous shot and interpolate cleanly. A **shared boundary frame Ki is rendered
-once** and reused as the end of clip i-1 and the start of clip i; never reword it
-between the two clips it joins. Each prompt goes in its own code block; the `参数`
-line stays **outside** so it can never be pasted into CLIPTextEncode.
+- **K0 / Picture 1** — exact opening state at 0.00 seconds.
+- **K1 / Picture 2** — exact ending state at the declared 4–15 second endpoint.
+
+Keep them consistent in identity, clothing, environment, aspect ratio, style, and lighting.
+Describe a reachable opening and ending state; the H3 prompt supplies the observable intermediate
+motion path. H3 accepts only one first frame and one last frame per request, so intermediate
+storyboard images are planning aids, not extra FL2VA API inputs.
+
+For a large viewpoint change, location change, or several unrelated actions, create another shot
+and another H3 request. Do not recreate the old pattern of several 2–4 second interpolation clips:
+H3's minimum output duration is 4 seconds and its official FL2VA guide favors one continuous shot.
 
 K0 (首帧) — 抬腿发力前一刻：
 
@@ -138,18 +136,7 @@ K0 (首帧) — 抬腿发力前一刻：
 ```
 参数（不进提示词）：steps 10｜cfg 0｜1280×720｜固定seed=4477
 
-K1 (中间关键帧) — 踹实、少年双脚离地但尚未越崖（仅动作阶段变化）：
-
-```text
-电影感中近景侧面平视，二十岁左右白衣青年，身形修长，玉冠束发，眉眼锋利，银纹宗门长袍，
-收势的一脚已踹中约十六岁少年，清瘦，短束发，粗布外门弟子服，左眉有细疤，少年身体猛地
-后弓、双脚离地、仍在崖线以内；断魂崖，陡峭黑岩断崖，崖边一株枯树，崖下深不见底的冷雾，
-碎石在脚边震起。冷调月光侧逆光拉出两人轮廓，体积雾光切开深蓝夜色。国风水墨与写实结合、
-冷色调、高反差夜景、电影构图。画面干净，无文字、无水印、无多余人物，正确的手部与肢体结构。
-```
-参数（不进提示词）：steps 10｜cfg 0｜1280×720｜固定seed=4477
-
-K2 (尾帧) — 少年越过崖线、坠入冷雾（远景、镜头外移）：
+K1 (尾帧 / Picture 2) — 少年越过崖线、坠入冷雾：
 
 ```text
 电影感远景高角度俯视，二十岁左右白衣青年，身形修长，玉冠束发，银纹宗门长袍，立在崖边
@@ -160,30 +147,23 @@ K2 (尾帧) — 少年越过崖线、坠入冷雾（远景、镜头外移）：
 ```
 参数（不进提示词）：steps 10｜cfg 0｜1280×720｜固定seed=4477
 
-运镜/转场 (video) — 交给视频模型（LTX-2.3，见 `ltx2-video.md`），不喂给 Z-Image。
-一段一条，K1 只渲染一次、既是片段1的尾也是片段2的首：
+运镜、动作过程、台词与声音交给 MiniMax-H3（见 `minimax-h3-video.md`），不喂给
+Z-Image。Picture 1 和 Picture 2 只锚定端点，H3 prompt 写完整连续路径：
 
 ```text
-片段1 (K0→K1)：镜头侧面横移轻微跟随，节奏由蓄力的短暂停顿转为爆发：白衣青年抬腿、
-发力、一脚踹出；少年被踹得后弓、双脚离地、仍在崖线以内。狂风掀动衣袂、碎石在脚边震起。
-约3秒，前段紧绷、后段猛烈命中。
-片段2 (K1→K2)：镜头从崖边向外跟摇并轻微下坠：白衣的赵天骄立在崖边收势，少年越过崖线、
-向崖外坠出、在空中失衡旋转、迅速变小。狂风把冷雾向上卷起，碎石滚落坠入深雾。约4秒，
-前段越线失重、后段坠向冷雾。
+Picture 1 的蓄力状态 → 抬腿发力 → 踹击命中 → 林越身体后弓、双脚离地 →
+越过崖线 → Picture 2 的坠落构图。总时长 6 秒，单镜头连续完成。
 ```
 
 Rules of thumb:
-- **Only the moment-in-time changes.** If you find yourself rewording an anchor or the lighting
-  between adjacent keyframes, stop — that reintroduces drift.
-- **One seed for the whole chain**; only randomize if a later keyframe's composition genuinely
-  demands it.
-- **Keep each delta small.** If a single pair would be a big translation/pose/camera jump, insert
-  another keyframe and split it into two clips — that's what makes FLF2V interpolate cleanly.
-- **Static shots**: make a 2-keyframe pair differ by a micro-beat (a breath, a blink, a gaze
-  shift) and write a minimal motion prompt (镜头极缓推进，人物近乎静止，只有呼吸与雾气浮动).
-- **Motion prompt is backend-agnostic** (Wan2.2 FLF2V, Kling 首尾帧, Hailuo, LTX, Runway):
-  describe 运镜 + 主体运动 + 环境运动 + 节奏时长. Do **not** put anchors/style/constraints in it,
-  and never send it to Z-Image.
+- Keep endpoint anchors, environment, style, lighting, and aspect ratio consistent.
+- A shared seed can help Z-Image continuity, but it is a still-generation tactic, not an H3 field.
+- Static shots still need a visible micro-development: breath, blink, gaze shift, focus pull,
+  steam, fabric, or light movement.
+- If endpoint states cannot be connected credibly in 4–15 seconds from one camera setup, split
+  the screenplay beat into separate shots.
+- Never send H3 alignment instructions, dialogue tags, soundscape, music, or API parameters to
+  Z-Image.
 
 ## 8. Scene complexity — budget, split, and bind
 
