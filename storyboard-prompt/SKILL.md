@@ -1,163 +1,180 @@
 ---
 name: storyboard-prompt
 description: >-
-  Convert a screenplay scene (剧本/场次) into a professional shot list (分镜脚本),
-  storyboard-frame prompts, and MiniMax-H3-native audiovisual prompts. Use whenever
-  the user wants to break a scene into shots, design 分镜 / storyboard, decide
-  景别/运镜/机位, write storyboard image prompts, or prepare MiniMax-H3 T2VA, I2VA,
-  FL2VA, or Ref2VA generation prompts. Trigger on "拆分镜", "写分镜", "generate
-  storyboard prompts", "给这场戏做分镜图", "把剧本变成分镜", "MiniMax-H3",
-  "Hailuo-03", "H3 video prompt", "首尾帧生成视频", "参考图生成视频", or requests
-  to preserve screenplay dialogue, VO, ambience, sound effects, music, character
-  identity, style, motion, camera, or voice references in generated video. The
-  default image backend is Z-Image Turbo; the default video backend is MiniMax-H3.
-  This is the second stage after screenplay-writer and authors prompts only.
+  Convert a screenplay scene into a strict JSON array of production-ready image
+  and MiniMax-H3 audiovisual prompts. Use whenever the user asks to split a
+  script into shots or video pieces, design storyboard prompts, prepare
+  MiniMax-H3/Hailuo-03 T2VA, I2VA, FL2VA, L2VA, or Ref2VA inputs, preserve
+  dialogue/VO/audio, or generate critical reference-image prompts. Each JSON
+  object represents one approximately 5-10 second video piece and contains its
+  image inputs, image-generation prompts, H3 request settings, and video prompt.
+  All model-facing prose is English except verbatim dialogue, lyrics, and visible
+  text. This skill authors prompts only and never invokes generation backends.
 ---
 
 # Storyboard Prompt Generator (MiniMax-H3)
 
-Turn a screenplay scene into:
+Convert screenplay material into a **JSON array**. Each object is one independent,
+production-ready MiniMax-H3 video generation piece lasting approximately 5-10 seconds.
+The same object contains every image-generation prompt needed for that piece.
 
-1. a director-readable shot list;
-2. storyboard keyframe prompts for Z-Image Turbo or another image backend;
-3. one production-ready MiniMax-H3 audiovisual prompt package per shot.
+Read `references/minimax-h3-video.md` before composing H3 prompts. Read
+`references/z-image-turbo.md` before composing image prompts.
 
-Read `references/minimax-h3-video.md` before writing H3 prompts. It is derived from MiniMax's
-official Base and Full-Reference prompt guides and defines the exact field order, dialogue
-syntax, speaker IDs, reference labels, and mode constraints.
+## Non-negotiable output contract
 
-## Backend roles
+- Return one raw JSON array and nothing else.
+- Do not wrap the JSON in Markdown fences.
+- Do not add headings, explanations, notes, or trailing text.
+- Emit strict JSON: double-quoted keys and strings, no comments, no trailing commas.
+- Escape line breaks inside `video_prompt` as `\n`.
+- Keep the field names and nesting from the schema below.
+- Each array item must be self-contained enough to submit or transform into one H3 request.
 
-- **Storyboard stills — Z-Image Turbo by default.** Read `references/z-image-turbo.md`.
-  It is text-to-image, ignores negative prompts at CFG≈0, and benefits from long natural
-  language plus verbatim identity anchors.
-- **Audiovisual video — MiniMax-H3 by default.** It generates video and 32-kHz stereo audio
-  together at 24 fps. Each output lasts an integer 4–15 seconds.
-- The skill writes prompts and request plans; it does not invoke either backend.
+## Prompt language
 
-## Establish the visual and audio bible
+Write all model-facing prose in natural English regardless of source language:
 
-Before splitting shots, record:
+- image prompts;
+- reference purposes and descriptions;
+- shot, action, camera, style, ambience, and music descriptions;
+- every H3 prompt section.
 
-- **Style phrase** — one invariant sentence describing medium, palette, lighting texture,
-  rendering style, and overall visual treatment.
-- **Visual anchors** — one canonical physical description for every recurring character,
-  location, and important prop. Reuse each phrase verbatim in storyboard-image prompts.
-- **Speaker registry** — assign `(S1)`, `(S2)`, and so on in order of first vocal event in
-  the scene. A speaker keeps the same ID across all shots. VO and OS reuse that character's ID.
-- **Voice intent** — age range, pitch, timbre, pace, accent, and delivery only when the
-  screenplay or reference assets establish them. Do not invent a celebrity voice.
-- **Sound palette** — persistent ambience, recurring physical sounds, and audience-only score.
-- **Reference inventory** — available character/style/scene images, motion/camera videos, and
-  voice/music audio. Record the purpose of each asset rather than merely listing filenames.
+Preserve source language only for:
 
-## Pass 1 — Design H3-feasible shots
+- verbatim dialogue and lyrics inside `<d>[Language] ...</d>`;
+- text that must visibly appear in the generated scene;
+- `source_scene` and character names when retaining their original spelling is useful.
 
-Let the drama choose coverage:
+Do not translate, rewrite, shorten, or improve spoken wording.
 
-- dialogue: shot/reverse-shot, reaction shots, medium and close framing;
-- action: tracking, handheld, fast cuts, clear cause→effect;
-- emotion: close-up plus slow push-in and room for the post-line reaction;
-- scene change: a real cut or transition, not an impossible movement inside one FL2VA shot.
+## Internal continuity bible
 
-Each H3 generation must be **4–15 seconds**. Prefer **4–8 seconds per shot** for reliability.
-Use one continuous camera setup per FL2VA shot. If a beat needs a large viewpoint change, a
-different location, or several unrelated actions, split it into separate shots instead of
-building a chain of 2-second interpolation clips.
+Before splitting the scene, establish internally:
 
-For every shot decide:
+- one invariant English style phrase;
+- one invariant English visual anchor for each recurring character, location, costume state,
+  and important prop;
+- stable speaker IDs `(S1)`, `(S2)`, and so on, assigned by first vocal event;
+- persistent ambience and audience-only score logic;
+- available image, video, and audio references;
+- stable `asset_id` values for images reused across pieces.
+- a source-state ledger for each piece: time of day, location, clothing, injuries, held props,
+  revealed information, and who is present.
 
-- 景别, duration, camera motion, angle, composition;
-- visible action path: opening state → observable intermediate changes → ending state;
-- dialogue/VO/OS and the exact vocal source;
-- ambient sound, synchronized SFX, and audience-only music;
-- visual anchors and reference assets;
-- H3 mode.
+Reuse anchor wording and asset IDs verbatim across every relevant JSON object. Do not emit a
+separate bible object; copy the needed continuity information into each video piece.
+Never leak a later discovery, injury, costume state, prop, inscription, or character arrival into
+an earlier image or video prompt.
 
-### Complexity budget
+## Pass 1 - Split into 5-10 second video pieces
 
-Aim for one primary action, one camera movement, and one active speaker per shot. H3 can handle
-more, but retries rise when a short clip combines multiple speakers, major physical action,
-large camera travel, dense text, and several sound events.
+Each JSON object represents one H3 generation request.
 
-Do not shorten dialogue, translate it, or silently move it to another shot to satisfy the
-budget. Split the shot at a natural dramatic boundary.
+- Target **5-10 seconds** per piece.
+- Combine adjacent compatible micro-beats when a piece would be shorter than 5 seconds.
+- Split at a natural action, dialogue, reaction, camera, or location boundary when a piece
+  would exceed 10 seconds.
+- Use one primary action, one meaningful camera movement, and normally one active speaker.
+- Choose one concrete camera movement. Never write alternatives such as `push or track`, and
+  never replace camera direction with meta prose such as `use the stated shot plan`.
+- Preserve a reaction window after important dialogue.
+- Estimate spoken duration before assigning the piece duration. Dialogue plus pauses, visible
+  action, and reaction must fit at a natural pace; split the piece rather than rushing speech.
+- Keep each piece visually and spatially coherent.
+- Never create several short objects merely to represent evenly spaced storyboard frames.
 
-## Pass 2 — Choose the H3 mode
+MiniMax H3 technically accepts integer durations from 4-15 seconds. Use 4 or 11-15 only when
+the source cannot be represented faithfully within 5-10 seconds; prefer combining or splitting.
 
-Choose exactly one mode per generation request.
+## Pass 2 - Choose one H3 mode
 
-### FL2VA — default for storyboard-controlled shots
+Choose exactly one mode per object.
 
-Use first-and-last-frame generation when exact opening and closing composition matter.
+### Ref2VA - default for narrative pieces
 
-- `Picture 1` is the first frame at `0.00`.
-- `Picture 2` is the last frame at the shot duration.
-- Write the continuous physical and camera path connecting them.
-- Usually keep one `[Shot 1]` with no internal cuts.
-- The two frames should describe compatible identity, environment, lighting, and viewpoint.
+Use Ref2VA when identity, costume, location, style, prop design, motion, camera, voice, or music
+references matter more than exact endpoint pixels.
 
-FL2VA is the normal replacement for the former LTX workflow. A shot normally gets **K0 and K1,
-one H3 prompt, and one 4–15 second video**, not several 2–4 second clips. Add an intermediate
-storyboard frame only as planning evidence or split the action into a new shot; H3's API accepts
-only one first frame and one last frame per request.
+- Reference images are not start/end frames.
+- Generate or reuse the smallest useful set of critical images, normally 2-5.
+- Critical images may depict any important visual fact or moment in the target video.
+- Cover the needed identity/costume, location/style, prop, expression, and decisive
+  action/composition information.
+- Prefer targeted state and action references over generic portraits. A reusable identity image
+  is insufficient when the piece depends on a new injury, revealed prop, precise group layout,
+  readable inscription, or decisive pose.
+- Track every named active or speaking subject with a resolvable subject/reference label.
+- For crowded confrontations, use several complementary references with spatially bound
+  subgroups rather than one overloaded group image.
+- Map every image to `reference_image`.
+- Give every reference an explicit `purpose`.
+- Never assign a timestamp to a Ref2VA image.
+- Never mix reference roles with `first_frame` or `last_frame`.
+
+### FL2VA
+
+Use only when both opening and ending pixels must be exact.
+
+- Include exactly one `first_frame` and one `last_frame`.
+- Describe a continuous, reachable action and camera path between them.
+- Use K0 and K1 asset IDs or another clear stable pair.
 
 ### I2VA or L2VA
 
-Use I2VA when only the opening composition must be exact, and L2VA when only the landing frame
-must be exact. Let the model develop or infer the unconstrained side of the timeline.
+Use I2VA when only the opening frame must be exact. Use L2VA when only the ending frame must
+be exact.
 
 ### T2VA
 
-Use text-only generation for establishing shots, effects, inserts, or transitions where strict
-character identity and exact endpoint composition are not required.
+Use text-only generation for inserts, establishing shots, effects, or transitions that do not
+need visual-reference consistency. Its `image_inputs` array is empty.
 
-### Ref2VA — use references instead of first/last frames
+## Pass 3 - Compose image inputs
 
-Use reference mode when character identity, location, style, motion, camera movement, voice
-timbre, music, or another reusable attribute matters more than exact endpoint frames.
+Every visual input belongs in `image_inputs`.
 
-- Up to 9 reference images, 3 reference videos, and 3 reference audios; at most 12 files.
-- Audio cannot be the sole reference input.
-- Assign every reference a specific job.
-- Use `<Subject N>`, `<Picture N>`, `<Video N>`, and `<Audio N>` consistently.
-- Produce `subject_definitions`, `summary`, `retention_analysis`, `detailed_description`,
-  `overall_soundscape`, and `non_diegetic_music`, all in English except original dialogue,
-  lyrics, and visible text.
+For generated images:
 
-**API boundary:** reference inputs and first/last-frame inputs are mutually exclusive. Never
-emit a request that mixes `reference_image/reference_video/reference_audio` with
-`first_frame/last_frame`.
+- set `source` to `"generate"`;
+- include a stable `asset_id`;
+- include the H3 label such as `"Picture 1"`;
+- set `api_role` to `reference_image`, `first_frame`, or `last_frame`;
+- state one clear `purpose`;
+- write a complete English `prompt`;
+- include image model parameters separately from the prompt.
 
-## Pass 3 — Compose storyboard image prompts
+For supplied assets:
 
-For each required keyframe, follow `references/z-image-turbo.md`:
+- set `source` to `"provided"`;
+- identify the asset in `source_asset`;
+- set `prompt` to `null`;
+- still include its H3 label, API role, and purpose.
 
-- write one complete natural-language paragraph;
-- group each subject's appearance, position, action, and expression together;
-- reuse visual anchors verbatim;
-- state lighting separately;
-- end with positive cleanliness constraints;
-- place sampler parameters outside the prompt code block.
+For an image generated once and reused in later pieces:
 
-For FL2VA, author:
+- keep the same `asset_id`, prompt, parameters, and visual anchors;
+- keep the same seed and every parameter value exactly;
+- set `source` to `"reuse"`;
+- use `source_asset` to point to the stable asset ID.
 
-- **K0 / Picture 1:** the precise opening state;
-- **K1 / Picture 2:** the precise ending state;
-- optional planning frames between them, clearly marked **not API inputs**.
+Image prompts should:
 
-K0 and K1 must preserve character identity, clothing, location, style, aspect ratio, and
-lighting unless the screenplay explicitly changes them. Unlike the former LTX workflow, matching
-seeds are a useful storyboard-generation tactic but are not an H3 API requirement.
+- describe one finished still image, not video motion;
+- group each subject's appearance, position, action, and expression;
+- repeat canonical visual anchors verbatim;
+- specify environment, composition, and lighting;
+- end with concise positive cleanliness constraints;
+- remain English even when the screenplay is not English.
+- match the source-state ledger for that exact piece.
+- omit blanket `no text` constraints when the required image must show readable source text;
+  quote the exact visible text instead.
 
-## Pass 4 — Compose the H3 prompt
+## Pass 4 - Compose the H3 video prompt
 
-H3 prompt structure is strict. Use English for prompt prose because the official Context-IR
-formats are English. Keep dialogue and visible text in their original language.
+### T2VA / I2VA / FL2VA / L2VA
 
-### Base modes: T2VA / I2VA / FL2VA / L2VA
-
-Use the mode-specific alignment instruction from `references/minimax-h3-video.md`, then exactly:
+Follow the official base structure:
 
 ```text
 integrated_multimodal_description: [Shot 1] ...
@@ -167,101 +184,156 @@ overall_soundscape: ...
 non_diegetic_music: ...
 ```
 
-In `integrated_multimodal_description`:
-
-- establish style, composition, subjects, position, and opening state;
-- describe camera motion as type + meaningful amplitude + speed;
-- choreograph visible actions and reactions in playback order;
-- keep stable speaker IDs across shots;
-- derive the language tag from the source and format speech as
-  `<d>[Language] exact original dialogue.</d>`; for example, use `[Chinese]` only for Chinese;
-- for VO, write `says in an off-screen voiceover` and state that the visible character's
-  lips remain completely closed;
-- place synchronized diegetic sounds where they occur;
-- use timestamped `[Shot N]` only for real internal cuts in T2VA/Ref2VA, not minor reframing.
-
-`overall_soundscape` is 1–4 English sentences covering ambience, physical action sounds, and
-non-verbal human sounds. Do not repeat dialogue.
-
-`non_diegetic_music` is 1–3 English sentences describing audience-only instrumentation, tempo,
-rhythm, and dynamics. Use `N/A` when no score is wanted.
+Add the official first/last-frame alignment instruction before these fields when required.
 
 ### Ref2VA
 
-Follow the six-section schema in `references/minimax-h3-video.md`. Make the relationship between
-each reference and the target explicit:
+Follow the official six-section structure exactly:
 
-- identity, costume, prop, or environment → `<Subject N>`;
-- concrete storyboard/keyframe planning anchor → `<Picture N>`;
-- source edit, continuation, motion, cuts, rhythm → `<Video N>`;
-- copied or referenced voice/music/sound → `<Audio N>`.
-
-Use only the official retention markers. Do not promise full preservation when the user asks for
-a substantial attribute change.
-
-## Output format
-
-Produce Markdown with a scene header, bible, shot table, then one block per shot.
-
-````markdown
-## 分镜：第 {集} 集 · {集数}-{场次} {地点}
-
-**画风**：{style phrase}
-**视觉锚点**：{entity → invariant anchor}
-**说话人**：{角色 → S1/S2... + voice intent}
-**参考素材**：{asset → identity/style/motion/camera/voice/music role}
-
-| 镜号 | 时长 | 景别/机位 | 运镜 | 起点→过程→落点 | 台词/VO | 声音 | H3模式 |
-|---|---:|---|---|---|---|---|---|
-| 01 | 6s | 中景/低角度 | 慢速小幅推近 | 迈步逼近→停住俯视 | 赵天骄：… | 崖风/碎石/低弦 | FL2VA |
-
-### 镜号 01
-
-**模式与请求参数**：MiniMax-H3 FL2VA｜duration=6｜resolution=2K｜ratio=adaptive
-
-**Picture 1 / K0 首帧 — Z-Image Turbo**
 ```text
-{complete storyboard image prompt}
-```
-参数：{outside prompt}
+subject_definitions:
+...
 
-**Picture 2 / K1 尾帧 — Z-Image Turbo**
-```text
-{complete storyboard image prompt}
-```
-参数：{outside prompt}
+summary:
+...
 
-**MiniMax-H3 FL2VA prompt**
-```text
-How the reference pictures align with the target video — Picture 1 (from Shot 1) aligns with the 0.00-second mark of the target video; Picture 2 (from Shot 1) aligns with the 6.00-second mark of the target video.
+retention_analysis:
+...
 
-integrated_multimodal_description: [Shot 1] ...
+detailed_description:
+...
 
-overall_soundscape: ...
+overall_soundscape:
+...
 
-non_diegetic_music: ...
+non_diegetic_music:
+...
 ```
 
-**API素材映射**：Picture 1 → `first_frame`; Picture 2 → `last_frame`.
-````
+Make every `<Picture N>`, `<Subject N>`, `<Video N>`, and `<Audio N>` relationship explicit.
+Use only the retention markers documented in `references/minimax-h3-video.md`.
 
-For Ref2VA, replace the two endpoint-frame blocks with an ordered reference manifest and emit
-the six-section Ref2VA prompt. State explicitly that no first/last-frame roles are included.
+For `retention_analysis`:
+
+- use one line per label; never merge `<Picture N> / <Subject N>`;
+- use `fully_preserved` only when the referenced attributes truly remain unchanged;
+- use `partially_preserved` or `attribute_transfer` when pose, injury, lighting, time of day,
+  composition, or another material attribute changes.
+
+Write `detailed_description` as concrete playback-order direction, normally 300-500 English words
+depending on dialogue density. Establish the opening composition, subject positions, lighting,
+camera motion, intermediate actions and reactions, and synchronized physical sounds. Keep the
+complete H3 prompt below the API limit of 7000 characters.
+
+### Speech and sound
+
+- Keep stable speaker IDs across all objects.
+- Bind every referenced speaker with both its actual subject label and speaker ID, for example
+  `<Subject 2> (S1), Zhao Tianjiao, says...`.
+- For simultaneous speech, use the actual participating speaker IDs or define a real group
+  subject; never invent an unbound collective speaker.
+- Put only the language tag and exact spoken words inside `<d>`.
+- Use `says in an off-screen voiceover` for VO and state that visible lips remain closed.
+- Put synchronized physical sounds beside their visible causes.
+- Keep ambience and non-verbal sounds in `overall_soundscape`.
+- Keep audience-only score in `non_diegetic_music`.
+- Do not repeat dialogue in soundscape fields.
+
+## Required JSON schema
+
+Return an array of objects with this exact shape:
+
+```json
+[
+  {
+    "piece_id": "2-3-01",
+    "source_scene": "2-3 Soul-Breaking Cliff",
+    "duration_seconds": 7,
+    "h3_mode": "ref2va",
+    "model": "MiniMax-H3",
+    "resolution": "2K",
+    "ratio": "16:9",
+    "shot": {
+      "size": "medium-wide",
+      "angle": "eye-level side view",
+      "camera_motion": "fast tracking movement with small amplitude",
+      "composition": "Lin Yue on the left, Zhao Tianjiao on the right, cliff edge behind them",
+      "action_path": "the palm strike lands, Lin Yue flies backward, and his back hits the dead tree"
+    },
+    "dialogue": [],
+    "image_inputs": [
+      {
+        "asset_id": "lin-yue-and-zhao-cliff-r1",
+        "h3_label": "Picture 1",
+        "api_role": "reference_image",
+        "purpose": "character identities, costumes, confrontation spacing, and cliff visual style",
+        "source": "generate",
+        "source_asset": null,
+        "image_model": "Z-Image Turbo",
+        "prompt": "A complete English still-image generation prompt.",
+        "parameters": {
+          "width": 1280,
+          "height": 720,
+          "steps": 10,
+          "cfg": 0,
+          "seed": 2301
+        }
+      }
+    ],
+    "video_prompt": "subject_definitions:\n...\n\nsummary:\n...\n\nretention_analysis:\n...\n\ndetailed_description:\n...\n\noverall_soundscape:\n...\n\nnon_diegetic_music:\n..."
+  }
+]
+```
+
+## Field rules
+
+- `piece_id`: stable, ordered, and unique.
+- `source_scene`: original scene identifier plus a concise location label.
+- `duration_seconds`: integer, normally 5-10.
+- `h3_mode`: lowercase `t2va`, `i2va`, `fl2va`, `l2va`, or `ref2va`.
+- `model`: always `MiniMax-H3`.
+- `resolution`: `768P` or `2K`; default `2K`.
+- `ratio`: a supported concrete ratio, or `adaptive` where the selected mode permits it.
+- `shot`: English production intent for this piece.
+- `dialogue`: ordered vocal events with `speaker`, `speaker_id`, `type`, `language`, and exact
+  `text`; use an empty array when there is no speech.
+- `image_inputs`: all images required for this piece; use an empty array for T2VA.
+- `video_prompt`: one complete English H3 prompt string with escaped newlines.
+
+Dialogue item shape:
+
+```json
+{
+  "speaker": "赵天骄",
+  "speaker_id": "S1",
+  "type": "dialogue",
+  "language": "Chinese",
+  "text": "一个废物，也配觊觎宗门功法？"
+}
+```
+
+Allowed dialogue `type` values are `dialogue`, `voiceover`, `off_screen`, `singing`, and
+`group`.
 
 ## Final checks
 
-- Every duration is an integer from 4 through 15.
-- FL2VA endpoint timestamps exactly equal the declared duration with two decimals.
-- FL2VA normally contains one continuous shot and reaches Picture 2 at the end.
-- Ref2VA never mixes reference roles with first/last-frame roles.
-- Speaker IDs stay stable across the scene.
-- Every spoken word and punctuation mark is preserved inside `<d>`.
-- VO explicitly keeps visible lips closed.
-- Dialogue is absent from `overall_soundscape`.
-- Diegetic music stays in the timeline; audience-only score stays in `non_diegetic_music`.
-- Prompt prose is English; original dialogue, lyrics, and visible text keep their source language.
-- Parameters and explanatory notes remain outside prompt code blocks.
-
-For H3 mode details and worked examples, read `references/minimax-h3-video.md`. For image
-prompt composition, read `references/z-image-turbo.md`; for other image backends, read
-`references/prompt-composition.md`.
+- Output is parseable JSON and the root value is an array.
+- There is one object per approximately 5-10 second video piece.
+- Every object contains both the video prompt and all image inputs required for that request.
+- All model-facing prose is English.
+- Dialogue, lyrics, and visible text remain verbatim in their source language.
+- Ref2VA images use only `reference_image` and are not treated as endpoints.
+- Endpoint and reference roles never coexist in one object.
+- Every generated image has a complete English prompt and parameters.
+- Reused assets keep the same asset ID, anchors, prompt, parameters, and seed.
+- Every piece matches the source-state ledger and contains no future-information leakage.
+- Every named active or speaking subject resolves to a reference/subject label.
+- Every `camera_motion` names one executable movement with meaningful amplitude and speed.
+- Dialogue, action, pauses, and reaction fit naturally inside the declared duration.
+- Ref2VA retention analysis contains one accurate decision per label.
+- Ref2VA detailed description is shot-specific playback-order direction, not a template or
+  metadata restatement, and the complete video prompt is under 7000 characters.
+- H3 section names and order match the selected official mode.
+- Speaker IDs remain stable across the array.
+- Every duration and ratio is valid for the selected H3 mode.
+- No text appears before or after the JSON array.

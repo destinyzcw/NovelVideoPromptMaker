@@ -24,7 +24,8 @@ Build each prompt in this order of priority, highest first:
 4. **Environment & lighting** — time of day, weather, key light direction, atmosphere consistent
    with the scene heading.
 
-Write it as flowing natural Chinese describing the finished picture — not a comma-salad of tags.
+Write it as flowing natural English describing the finished picture—not a comma-salad of tags.
+Use English regardless of the source language so the image and H3 reference plans share terms.
 
 ## 2. Reference-image ordering rules
 
@@ -33,9 +34,9 @@ reference images:
 
 - **Position 1 = art-style reference** (if you have one). Begin the prompt with an explicit
   guard so the model copies only the look:
-  `仅参考图片1的画面风格，绝不参考其中的任何物品和构图，`
+  `Use Image 1 only for visual style; do not copy its objects or composition.`
 - **Positions 2+ = subject references** — character, then props, then scene — in a fixed order.
-  Reference them by number in the prompt text (`图片2为林越的相貌，图片3为门厅`).
+  Reference them by number (`Image 2 defines Lin Yue's appearance; Image 3 defines the hall`).
 - **Cap at ~5 references total for ordinary image models.** MiniMax-H3 Ref2VA is a deliberate
   exception: it supports up to 9 images plus video/audio references, but every asset must be
   assigned a specific role in the H3 prompt. More files are not automatically better.
@@ -67,6 +68,11 @@ the described moment differs. For MiniMax-H3 FL2VA these become Picture 1 at 0.0
 Picture 2 at the declared 4–15 second endpoint. The H3 prompt must describe the continuous path
 between them rather than merely repeating the two static states.
 
+Do not apply this endpoint rule to Ref2VA. Its reference images may show any critical visual
+fact or important moment in the target video. Choose them by role—identity, costume, location,
+style, prop, facial detail, decisive action, or composition—and map each to `reference_image`
+without a timestamp.
+
 ## 5. Style/content conflict handling
 
 The art-style reference often depicts its own scene/subject. Never let that leak into the shot:
@@ -84,21 +90,23 @@ The art-style reference often depicts its own scene/subject. Never let that leak
 Shot: `特写 / 慢推 / 平视`　画面描述: 林越眼神从警惕转为震惊　参考: 画风图、林越(初始)
 
 ```text
-仅参考图片1的画面风格，绝不参考其中的任何物品和构图，
-画面为林越面部特写，镜头缓缓推近，他的眼神由警惕逐渐转为震惊，眉头先皱后骤然睁大；
-图片2为林越的相貌，剥离其纯白背景；雨夜门厅昏黄暖光自侧上方打来，背景虚化，
-整体保持图片1的胶片颗粒质感与低饱和冷暖对比。
+Use Image 1 only for visual style; do not copy its objects or composition. A close-up frames
+Lin Yue as his wary gaze turns to shock, his brow tightening before his eyes widen. Image 2
+defines Lin Yue's appearance; remove its pure-white background and integrate him naturally into
+the rainy hall. Warm amber light falls from the upper side while the background remains soft.
+Keep Image 1's film grain and low-saturation warm-cool contrast.
 ```
 
 ### No reference-image support (features transcribed)
 
 ```text
-电影感胶片质感、低饱和冷暖对比、颗粒感的画面风格；
-林越面部特写：约三十岁男性，短硬寸头、剑眉、下颌有旧疤，深色风衣；
-镜头缓缓推近，眼神由警惕转为震惊；雨夜门厅昏黄暖光自侧上方打来，背景虚化。
+Cinematic film texture with grain and low-saturation warm-cool contrast. A close-up frames Lin
+Yue, a thirty-year-old man with short cropped hair, straight brows, an old chin scar, and a dark
+trench coat. His wary gaze turns to shock as warm amber light falls from the upper side in a
+rainy hall; the background remains soft.
 ```
 
 ### First / last frame pair (for video)
 
-- 首帧：`……林越的手刚触到门把，尚未推开，动作定格于开始前的一瞬……`
-- 尾帧：`……门已推开，林越半身探入门厅，雨水正从风衣下摆滴落，定格于动作完成后……`
+- First: `Lin Yue's hand has just touched the handle; the door is still closed.`
+- Last: `The door is open and Lin Yue leans halfway into the hall as rain drips from his coat.`

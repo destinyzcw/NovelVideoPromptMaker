@@ -1,192 +1,122 @@
 # NovelVideoPromptMaker
 
-Agent **skills** for the story → screen pipeline: turn a story into a structured
-screenplay (剧本), turn each scene into a shot list plus ready-to-use image prompts for
-storyboard frames (分镜图), and — optionally — **render those frames on a ComfyUI
-Z-Image Turbo endpoint and self-correct them in an agentic loop**. The first two skills
-encode *workflow, reasoning discipline, and loop control* and stay backend-agnostic; the
-third wires them to an actual image backend and adds a vision-QA retry loop.
+Prompt-authoring skills for a story-to-video workflow:
 
-The approach is distilled from the multi-agent prompt design of
-[Stonewuu/ai-fusion-video](https://github.com/Stonewuu/ai-fusion-video) (融光), reframed as
-standalone skills and stripped of that project's built-in image/video generation machinery.
+1. turn a story, outline, or novel excerpt into a structured screenplay;
+2. turn screenplay scenes into machine-readable image and MiniMax-H3 video prompts.
+
+The project generates prompts only. It does not call image or video backends, render media,
+manage ComfyUI, or run visual-QA loops.
 
 ## Skills
 
-| Skill | Stage | Input | Output |
-|-------|-------|-------|--------|
-| [`screenplay-writer`](screenplay-writer/SKILL.md) | 1 — 剧本 | Story synopsis/outline, or existing prose | Markdown screenplay: episodes → scenes → dialogue |
-| [`storyboard-prompt`](storyboard-prompt/SKILL.md) | 2 — 分镜图 + H3 prompt | A screenplay scene + visual/audio references | Shot list + H3 endpoint/reference plan + native audiovisual prompt |
-| [`storyboard-render-loop`](storyboard-render-loop/SKILL.md) | 3 — render + QA | A novel excerpt (orchestrates 1+2) + a ComfyUI endpoint | Rendered storyboard PNGs, vision-QA'd and retried, plus a state manifest |
+| Skill | Input | Output |
+|---|---|---|
+| [`screenplay-writer`](screenplay-writer/SKILL.md) | Story synopsis, outline, or prose | Markdown screenplay with episodes, scenes, action, dialogue, VO, and sound cues |
+| [`storyboard-prompt`](storyboard-prompt/SKILL.md) | Screenplay scene plus optional references | Strict JSON array: one object per approximately 5-10 second video piece, including image inputs, image prompts, H3 settings, and the complete video prompt |
 
-They chain: `screenplay-writer` output feeds `storyboard-prompt`; `storyboard-render-loop`
-orchestrates both and then renders.
+The two stages chain directly:
 
-```
-story / prose ──▶ screenplay-writer ──▶ 剧本 (scenes+dialogue)
-                                            │
-                                            ▼
-                       storyboard-prompt ──▶ 分镜脚本 + H3端点/参考素材 + 原生音视频提示
-                                            │
-                                            ▼
-                  storyboard-render-loop ──▶ ComfyUI Z-Image Turbo ──▶ keyframes ──▶ vision QA ──▶ revise/retry
+```text
+story / prose -> screenplay-writer -> screenplay -> storyboard-prompt -> JSON prompt objects
 ```
 
-### screenplay-writer (剧本)
-- Two modes: **generate from outline** (invent scenes faithful to the synopsis) and
-  **adapt existing prose** (restructure only what's written — never fabricate later events).
-- Three-pass loop: story bible (characters/scenes/props) → episode plan (per-episode
-  concept) → scenes & dialogue, processing **every** planned episode without skipping.
-- Conventions: `集数-场次 地点 时间内外景` headings, `▲` action, `VO`/`OS`, `【】` camera
-  cues, `角色名：台词` dialogue, and strict naming consistency.
+## MiniMax-H3 design
 
-### storyboard-prompt (分镜图 prompt)
-- Establishes the visual bible first (a reusable **style phrase** + per-entity **anchor phrases**),
-  deciding which appearance changes need a separate anchor vs. words.
-- Shot design driven by drama: 正反打 for dialogue, 跟拍/手持 for action, 特写+慢推 for
-  emotion; per shot picks 景别 / 时长 / 运镜 / 机位 / 关键帧节拍 / 对白.
-- Selects the correct **MiniMax-H3 mode** per shot: FL2VA for exact first/last storyboard
-  endpoints, I2VA/L2VA for one-sided anchors, T2VA for unconstrained inserts, or Ref2VA for
-  character/style/motion/camera/voice references. A normal FL2VA shot uses **K0 / Picture 1**
-  and **K1 / Picture 2** plus one continuous 4–15 second audiovisual prompt—not a chain of
-  micro-clips.
-- Follows MiniMax's official Context-IR schemas: English timeline prose, stable `(S1)` speaker
-  IDs, verbatim original-language dialogue inside `<d>[Language] ...</d>`, explicit VO lip
-  closure, `overall_soundscape`, and `non_diegetic_music`. Ref2VA additionally emits subject
-  definitions, task summary, retention analysis, detailed description, and ordered asset roles.
-- Composes the image prompts for the default backend — **Z-Image Turbo (Tongyi-MAI) in ComfyUI**:
-  long natural-language prompts, identity carried by verbatim anchor phrases (the base model is
-  text-to-image with no reference-image input), exclusions baked into the positive prompt (negative
-  prompts are ignored / CFG=0), lighting as its own clause, and suggested ComfyUI parameters —
-  **without calling any model.** Reference playbooks are included for Z-Image Turbo,
-  MiniMax-H3 Base/Ref2VA prompting, and other reference-capable image backends.
+- **English model prompts:** image and video prompt prose is always English, regardless of the
+  screenplay language. Verbatim dialogue, lyrics, and visible text retain their source language.
+- **Ref2VA-first narrative workflow:** character-driven pieces normally use critical reference
+  images for identity, costume, setting, style, props, expressions, or decisive compositions.
+  These images may depict any important moment and use API role `reference_image`.
+- **Endpoint modes remain available:** FL2VA, I2VA, and L2VA are used only when exact opening
+  or ending frames matter.
+- **Short production units:** each JSON object represents one independent H3 request, normally
+  lasting 5-10 seconds.
+- **Self-contained objects:** each item includes its shot intent, dialogue events, required
+  image inputs, image-generation prompts and parameters, H3 request settings, and video prompt.
 
-### storyboard-render-loop (novel → rendered frames)
-- **Orchestrator** that runs the two skills above on a novel excerpt, then renders every shot
-  on a **remote ComfyUI Z-Image Turbo** box over HTTP and self-corrects.
-- **Serial, closed loop per keyframe**: render each keyframe of a shot's chain in order → a
-  vision subagent inspects it against its 节拍 + anchors and checks the delta from the previous
-  keyframe is small/interpolatable → pass, or revise the prompt (using Z-Image tactics) and retry
-  until solid or the retry limit (default 3) is hit; a too-big delta triggers inserting an extra
-  keyframe, an overloaded frame triggers a shot split.
-- Keeps a resumable `render-state.json` manifest (endpoint keyframes with prompt/seed/attempts/
-  verdict plus the H3 mode/request/prompt), fails loudly
-  on endpoint/config errors, and produces a final status report.
-- Ships a **stdlib-only** ComfyUI client (`scripts/comfy_zimage.py`), a default API workflow
-  (`scripts/zimage_workflow.api.json`), and a QA subagent prompt (`agents/qa-inspect.md`).
-  The ComfyUI server runs on a separate GPU box on your LAN — set `COMFYUI_HOST`.
+## JSON output
+
+`storyboard-prompt` returns raw, parseable JSON with no Markdown wrapper or explanatory prose:
+
+```json
+[
+  {
+    "piece_id": "2-3-01",
+    "source_scene": "2-3 Soul-Breaking Cliff",
+    "duration_seconds": 7,
+    "h3_mode": "ref2va",
+    "model": "MiniMax-H3",
+    "resolution": "2K",
+    "ratio": "16:9",
+    "shot": {
+      "size": "medium-wide",
+      "angle": "eye-level side view",
+      "camera_motion": "fast tracking movement with small amplitude",
+      "composition": "two opponents framed beside a dead tree at the cliff edge",
+      "action_path": "the palm strike lands and the injured disciple hits the tree"
+    },
+    "dialogue": [],
+    "image_inputs": [
+      {
+        "asset_id": "cliff-confrontation-r1",
+        "h3_label": "Picture 1",
+        "api_role": "reference_image",
+        "purpose": "character identities, costumes, spacing, and cliff visual style",
+        "source": "generate",
+        "source_asset": null,
+        "image_model": "Z-Image Turbo",
+        "prompt": "A complete English still-image generation prompt.",
+        "parameters": {
+          "width": 1280,
+          "height": 720,
+          "steps": 10,
+          "cfg": 0,
+          "seed": 2301
+        }
+      }
+    ],
+    "video_prompt": "subject_definitions:\n...\n\nsummary:\n...\n\nretention_analysis:\n...\n\ndetailed_description:\n...\n\noverall_soundscape:\n...\n\nnon_diegetic_music:\n..."
+  }
+]
+```
 
 ## Layout
 
-```
+```text
 NovelVideoPromptMaker/
 ├── README.md
 ├── screenplay-writer/
 │   ├── SKILL.md
-│   └── references/conventions.md          # deep conventions, edge cases, examples
+│   └── references/conventions.md
 ├── storyboard-prompt/
 │   ├── SKILL.md
 │   └── references/
-│       ├── z-image-turbo.md               # DEFAULT image backend: Z-Image Turbo in ComfyUI
-│       ├── minimax-h3-video.md            # DEFAULT H3 Base/Ref2VA audiovisual prompt contract
-│       └── prompt-composition.md          # general playbook for reference-capable backends
-├── storyboard-render-loop/
-│   ├── SKILL.md
-│   ├── scripts/
-│   │   ├── comfy_zimage.py                 # stdlib-only ComfyUI client (patch/submit/poll/download)
-│   │   └── zimage_workflow.api.json        # default API-format Z-Image Turbo workflow
-│   ├── agents/qa-inspect.md                # per-frame vision-QA subagent prompt
-│   ├── references/
-│   │   ├── comfyui-api.md                  # endpoints, workflow export, params, troubleshooting
-│   │   ├── z-image-turbo.md               # image prompt playbook (shared with storyboard-prompt)
-│   │   └── minimax-h3-video.md             # MiniMax-H3 prompt playbook (shared)
-│   └── .env.example                        # COMFYUI_HOST for the remote GPU box
-└── examples/                               # real test input/output
-    ├── screenplay-writer/{input,output}.md
-    └── storyboard-prompt/{input,output}.md
+│       ├── minimax-h3-video.md
+│       ├── prompt-composition.md
+│       └── z-image-turbo.md
+└── examples/
+    └── storyboard-prompt/
+        └── xiakexing_episode_1.json
 ```
+
+## Prompt example
+
+[`examples/storyboard-prompt/xiakexing_episode_1.json`](examples/storyboard-prompt/xiakexing_episode_1.json)
+adapts the supplied first-episode excerpt of *Xiakexing* into 43 source-grounded MiniMax-H3
+pieces with colocated Z-Image prompts and H3 Ref2VA prompts.
 
 ## Installation
 
-These are portable agent skills (a `SKILL.md` with YAML frontmatter + optional
-`references/`, `scripts/`, `agents/`). To make them available to an agent that discovers
-skills from a directory, copy or symlink the skill folders into your skills directory, e.g.:
+Copy or symlink the skill directories into the skill directory used by your agent:
 
 ```powershell
-Copy-Item -Recurse .\screenplay-writer      "$env:USERPROFILE\.agents\skills\"
-Copy-Item -Recurse .\storyboard-prompt      "$env:USERPROFILE\.agents\skills\"
-Copy-Item -Recurse .\storyboard-render-loop "$env:USERPROFILE\.agents\skills\"
+Copy-Item -Recurse .\screenplay-writer  "$env:USERPROFILE\.agents\skills\"
+Copy-Item -Recurse .\storyboard-prompt  "$env:USERPROFILE\.agents\skills\"
 ```
 
-The agent loads only a skill's name + description until a matching task triggers it, then
-reads the `SKILL.md` body, and finally pulls in a `references/` file or `scripts/` only when
-needed.
+## Provenance and license
 
-### Using the render loop
-
-1. Deploy ComfyUI with Z-Image Turbo on a GPU box on your LAN (models: `qwen_3_4b`,
-   `z_image_turbo_bf16`, `ae` — see `storyboard-render-loop/references/comfyui-api.md`).
-2. Set the endpoint: copy `.env.example` and set `COMFYUI_HOST=http://<gpu-box>:8188`.
-3. Verify targeting once: `python scripts/comfy_zimage.py --prompt "…" --out t.png --dry-run`
-   (the `patch_report` should be all `true`).
-4. Ask the agent to "render the storyboard for this novel excerpt" — it runs stages 1→3.
-
-## Setup — exposing ComfyUI on the LAN (one-time, manual)
-
-The ComfyUI server runs on a **separate GPU box** (e.g. a Windows machine) and the
-agent/client runs elsewhere (e.g. a Mac) on the same network. These are manual steps
-you run **on the GPU box** — they are not performed by any skill.
-
-By default ComfyUI binds to `127.0.0.1`, so only that machine can reach it. To share it:
-
-**On the Windows box that runs ComfyUI (models live here):**
-
-1. Start ComfyUI listening on all interfaces:
-
-   ```powershell
-   # portable build
-   .\python_embeded\python.exe -s ComfyUI\main.py --listen 0.0.0.0 --port 8188
-   # or add `--listen 0.0.0.0` to the launch line inside run_nvidia_gpu.bat
-   ```
-
-2. Open the firewall port (PowerShell **as Administrator**); the active network
-   profile must be Private (Public blocks inbound by default):
-
-   ```powershell
-   New-NetFirewallRule -DisplayName "ComfyUI 8188" -Direction Inbound `
-     -Action Allow -Protocol TCP -LocalPort 8188 -Profile Private
-   Get-NetConnectionProfile   # confirm NetworkCategory = Private
-   ```
-
-3. Find the box's LAN IP:
-
-   ```powershell
-   (Get-NetIPAddress -AddressFamily IPv4 |
-     Where-Object {$_.IPAddress -like "192.168.*" -or $_.IPAddress -like "10.*"}).IPAddress
-   ```
-
-**From the device that runs the agent/client (e.g. Mac) on the same LAN:**
-
-```bash
-curl http://192.168.1.50:8188/system_stats     # JSON back = reachable
-export COMFYUI_HOST=http://192.168.1.50:8188
-```
-
-Gotchas:
-- Both devices must be on the **same subnet** (same router/Wi-Fi; guest networks
-  and AP/client isolation block peer traffic).
-- Sanity-check locally first: on the Windows box, `curl http://<its-ip>:8188/system_stats`.
-  If that fails, ComfyUI isn't bound to `0.0.0.0` (you missed `--listen`).
-- **No auth**: ComfyUI has no authentication. Only expose it on a trusted LAN;
-  never port-forward it to the public internet.
-
-## Examples
-
-`examples/` contains the exact prompts used to validate the writing skills and the Markdown
-they produced. The two examples share the 断魂崖 beat, demonstrating the screenplay →
-storyboard handoff end to end.
-
-## Provenance & license
-
-Design adapted from the agent prompts of `Stonewuu/ai-fusion-video` (MIT). This repository
+Design adapted from the agent prompts of
+[Stonewuu/ai-fusion-video](https://github.com/Stonewuu/ai-fusion-video) (MIT). This repository
 contains original skill text and does not redistribute that project's code.
