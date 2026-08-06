@@ -22,7 +22,9 @@ Also validate request plans against MiniMax's current official API documentation
 - Stable dialogue languages: Arabic, Chinese, English, French, German, Italian, Japanese,
   Korean, Portuguese, Russian, and Spanish
 - FL2VA inputs: zero, one, or two endpoint images
-- Ref2VA inputs: up to 9 images, 3 videos, 3 audios, maximum 12 files; audio cannot stand alone
+- Official Ref2VA envelope: up to 9 images, 3 videos, 3 audios, maximum 12 files; audio cannot
+  stand alone
+- Project interoperability cap: no more than 2 Ref2VA images in one generated request
 
 The public API treats endpoint-frame generation and reference generation as mutually exclusive.
 Do not mix `first_frame` / `last_frame` with `reference_image` / `reference_video` /
@@ -45,7 +47,7 @@ composition, or action moment; they are not implicitly first or last frames.
 
 ## 3. Prompt language
 
-Write every model-facing prompt field in natural English regardless of the source language.
+Write every MiniMax-H3 prompt field in natural English regardless of the source language.
 Translate scene description, action, camera, style, reference roles, ambience, and music into
 English. Preserve original language only for verbatim dialogue or lyrics inside `<d>` and text
 that must visibly appear in the scene.
@@ -285,7 +287,7 @@ workflow. First reuse suitable supplied assets, then generate missing critical i
 
 1. Identify what must stay recognizable: character identity and costume, location and style,
    important props, and decisive action, expression, or composition moments.
-2. Choose the smallest useful set, normally 2–5 images and never more than the API limit of 9.
+2. Choose the smallest useful set, with a hard project cap of 2 reference images per request.
 3. Give each image one explicit primary job. A compatible secondary job is fine, but avoid
    crowded sheets or near-duplicate timeline samples.
 4. Critical in-story images may come from any point in the target video. Refer to them as
@@ -296,6 +298,9 @@ workflow. First reuse suitable supplied assets, then generate missing critical i
    discovery, a later injury or costume state too early, or a character before arrival.
 7. Generic identity portraits do not replace state-specific references when the video depends on
    a wound, pose, group geometry, readable inscription, or decisive interaction.
+8. If the piece needs more than two images to establish its active identities, state, setting,
+   props, and action clearly, divide it into multiple coherent 5-10 second pieces. Each resulting
+   request must independently satisfy the two-image cap.
 
 MiniMax's official examples explicitly assign different reference images to mood/setting/film
 grain, character, product or prop design, facial detail, and ending logo. Follow that role-based

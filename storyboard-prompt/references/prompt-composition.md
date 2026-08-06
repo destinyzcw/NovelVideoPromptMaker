@@ -24,8 +24,9 @@ Build each prompt in this order of priority, highest first:
 4. **Environment & lighting** — time of day, weather, key light direction, atmosphere consistent
    with the scene heading.
 
-Write it as flowing natural English describing the finished picture—not a comma-salad of tags.
-Use English regardless of the source language so the image and H3 reference plans share terms.
+Write it as flowing natural prose in the source material's primary language, describing the
+finished picture rather than a comma-salad of tags. Keep the separate H3 reference descriptions
+in English and maintain equivalent identity and style anchors across both languages.
 
 ## 2. Reference-image ordering rules
 
@@ -37,9 +38,9 @@ reference images:
   `Use Image 1 only for visual style; do not copy its objects or composition.`
 - **Positions 2+ = subject references** — character, then props, then scene — in a fixed order.
   Reference them by number (`Image 2 defines Lin Yue's appearance; Image 3 defines the hall`).
-- **Cap at ~5 references total for ordinary image models.** MiniMax-H3 Ref2VA is a deliberate
-  exception: it supports up to 9 images plus video/audio references, but every asset must be
-  assigned a specific role in the H3 prompt. More files are not automatically better.
+- **Cap MiniMax-H3 Ref2VA at two images per video piece in this project.** Although the official
+  model envelope documents more inputs, the project uses a stricter interoperability limit. If
+  more visual references are essential, split the action into multiple coherent pieces.
 - **White-background asset sheets**: instruct the model to strip the pure-white background so the
   subject blends naturally into the shot's environment
   (`剥离图片2的纯白背景，使人物自然融入雨夜门厅`).

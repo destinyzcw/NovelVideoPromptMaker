@@ -10,7 +10,7 @@ specifically. Read this whenever you generate 分镜图 prompts intended for Z-I
 3. No negative prompt → in-prompt constraints
 4. Prompt scaffold (layered)
 5. Recommended ComfyUI parameters
-6. Worked examples (English, storyboard shots)
+6. Worked examples (Chinese-source storyboard shots)
 7. MiniMax-H3 reference and endpoint images
 8. Scene complexity — budget, split, and bind
 
@@ -20,8 +20,9 @@ specifically. Read this whenever you generate 分镜图 prompts intended for Z-I
   steps). Optimized for fast, strong **instruction following**.
 - Text encoder is an LLM (Qwen3-4B), so it wants **long, descriptive natural-language** prompts,
   **not** tag/keyword lists. Think "art director briefing", not "1girl, masterpiece, 8k".
-- Understands both Chinese and English, but this project writes every model-facing prompt in
-  **English** so the image plan and MiniMax-H3 reference descriptions share one vocabulary.
+- Natively supports Chinese and English. Use the **source material's primary language** for each
+  image prompt and keep one language per prompt. This preserves culturally specific vocabulary;
+  the separate MiniMax-H3 prompt remains English.
 - **No classifier-free guidance at inference** (`guidance_scale = 0`); the base pipeline
   **ignores `negative_prompt` entirely**. What you don't say is allowed; what you say vaguely,
   it improvises.
@@ -89,31 +90,27 @@ the sibling `parameters` object; never append sampler settings to the prompt tex
   randomize when you want alternates
 - **sampler/scheduler**: follow the Z-Image Turbo ComfyUI workflow defaults
 
-## 6. Worked examples (storyboard shots, English)
+## 6. Worked examples (Chinese-source storyboard shots)
 
 ### Emotional close-up (特写 / 慢推)
 
 ```text
-A cinematic close-up slowly pushes toward a lean sixteen-year-old disciple with short tied hair,
-a coarse novice robe, and a thin scar over his left eyebrow. Blood marks the corner of his mouth;
-rain and dust streak his face as his expression changes from defiance to resolve. His whitening
-knuckles grip a palm-sized damaged jade slip with scorched edges and dark-gold cloud patterns.
-Cold moonlight rims him from behind against the night cliff, while shallow depth of field softens
-the fog. Realistic Chinese ink-wash treatment, cool cinematic palette, and fine film grain.
-Clean frame without text, watermark, or extra people.
+电影感特写画面，一名身形清瘦的十六岁弟子占据画面中心。他束着短发，身穿粗布
+入门弟子袍，左眉上方有一道细疤，嘴角带血，雨水与尘土划过面庞，神情由倔强转为
+坚定。发白的指节紧握一枚巴掌大小、边缘焦黑破损并带有暗金云纹的玉简。冷月光从
+背后勾勒人物轮廓，夜色悬崖与雾气在浅景深中虚化。写实中国水墨质感，冷色电影
+调色，细腻胶片颗粒。画面干净，不出现文字、水印或多余人物。
 ```
 Parameters: `{"steps": 9, "cfg": 0, "width": 1024, "height": 1024, "seed": 2301}`
 
 ### Wide establishing action (远景 / 俯视)
 
 ```text
-A high-angle wide shot at night shows a steep black-rock cliff with one dead tree at the edge and
-bottomless cold fog below. Gale-force wind drives dark rain across two figures: a lean young
-disciple with short tied hair, a coarse robe, and a thin left-eyebrow scar reels near the edge,
-while a white-robed young man approaches with his hands behind his back and a contemptuous gaze.
-The figures remain small against the landscape. Realistic Chinese ink-wash treatment, cool
-palette, high-contrast night lighting, volumetric fog, and cinematic composition. Clean frame
-without text, watermark, or background clutter.
+夜晚俯视远景，陡峭的黑色岩崖占据画面，崖边只有一棵枯树，下方是深不见底的寒雾。
+狂风卷着冰冷暴雨横扫两个人物：束短发、穿粗布袍、左眉有细疤的清瘦少年弟子在
+悬崖边踉跄；一名白袍青年双手负于身后，以轻蔑目光步步逼近。两人在宏大险峻的
+山崖景观中保持较小比例。写实中国水墨质感，冷色调，高反差夜景照明，体积雾与
+电影化构图。画面干净，不出现文字、水印或杂乱背景元素。
 ```
 Parameters: `{"steps": 10, "cfg": 0, "width": 1280, "height": 720, "seed": 2302}`
 
@@ -129,8 +126,10 @@ detail, or any decisive action/composition moment in the video. Name them R1...R
 `reference_image`, and describe each role explicitly in the H3 prompt. They do not need to depict
 the first or last frame, and they receive no timeline timestamp.
 
-Use 2–5 strong, complementary references in ordinary cases rather than many near-duplicates.
-Keep shared identity and visual-world anchors verbatim across their English prompts.
+Use at most two strong, complementary references per H3 video piece. If more critical visual
+facts are required, split the action into multiple coherent pieces rather than dropping essential
+state or overloading a reference image.
+Keep shared identity and visual-world anchors verbatim across their source-language prompts.
 Do not rely on generic portraits alone when the target action depends on injuries, props,
 spatial relationships, group geometry, or decisive poses. Generate targeted critical stills.
 

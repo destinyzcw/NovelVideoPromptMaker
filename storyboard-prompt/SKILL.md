@@ -8,8 +8,9 @@ description: >-
   dialogue/VO/audio, or generate critical reference-image prompts. Each JSON
   object represents one approximately 5-10 second video piece and contains its
   image inputs, image-generation prompts, H3 request settings, and video prompt.
-  All model-facing prose is English except verbatim dialogue, lyrics, and visible
-  text. This skill authors prompts only and never invokes generation backends.
+  Z-Image prompts follow the source language, while MiniMax-H3 prompt prose is
+  English except verbatim dialogue, lyrics, and visible text. This skill authors
+  prompts only and never invokes generation backends.
 ---
 
 # Storyboard Prompt Generator (MiniMax-H3)
@@ -33,12 +34,14 @@ Read `references/minimax-h3-video.md` before composing H3 prompts. Read
 
 ## Prompt language
 
-Write all model-facing prose in natural English regardless of source language:
+Use a split-language policy:
 
-- image prompts;
-- reference purposes and descriptions;
-- shot, action, camera, style, ambience, and music descriptions;
-- every H3 prompt section.
+- **Z-Image `prompt` strings:** use the source material's primary language. Chinese source
+  produces natural Chinese image prompts; English source produces English image prompts.
+  Keep one language per image prompt.
+- **MiniMax-H3 `video_prompt`:** write reference definitions, action, camera, style, ambience,
+  music, and every section in natural English.
+- **JSON planning metadata:** use concise English, except original names and `source_scene`.
 
 Preserve source language only for:
 
@@ -52,9 +55,9 @@ Do not translate, rewrite, shorten, or improve spoken wording.
 
 Before splitting the scene, establish internally:
 
-- one invariant English style phrase;
-- one invariant English visual anchor for each recurring character, location, costume state,
-  and important prop;
+- one invariant source-language image style phrase and matching English H3 style phrase;
+- paired invariant visual anchors for each recurring character, location, costume state, and
+  important prop: source-language wording for Z-Image and English wording for MiniMax-H3;
 - stable speaker IDs `(S1)`, `(S2)`, and so on, assigned by first vocal event;
 - persistent ambience and audience-only score logic;
 - available image, video, and audio references;
@@ -97,7 +100,8 @@ Use Ref2VA when identity, costume, location, style, prop design, motion, camera,
 references matter more than exact endpoint pixels.
 
 - Reference images are not start/end frames.
-- Generate or reuse the smallest useful set of critical images, normally 2-5.
+- Use at most two reference images in one video piece. One strong reference is preferable when
+  it carries all essential visual facts.
 - Critical images may depict any important visual fact or moment in the target video.
 - Cover the needed identity/costume, location/style, prop, expression, and decisive
   action/composition information.
@@ -105,8 +109,9 @@ references matter more than exact endpoint pixels.
   is insufficient when the piece depends on a new injury, revealed prop, precise group layout,
   readable inscription, or decisive pose.
 - Track every named active or speaking subject with a resolvable subject/reference label.
-- For crowded confrontations, use several complementary references with spatially bound
-  subgroups rather than one overloaded group image.
+- If a crowded confrontation or complicated action needs more than two distinct visual
+  references, split it into multiple coherent 5-10 second pieces. Do not overload one request or
+  omit a critical identity/state reference merely to fit the cap.
 - Map every image to `reference_image`.
 - Give every reference an explicit `purpose`.
 - Never assign a timestamp to a Ref2VA image.
@@ -141,7 +146,7 @@ For generated images:
 - include the H3 label such as `"Picture 1"`;
 - set `api_role` to `reference_image`, `first_frame`, or `last_frame`;
 - state one clear `purpose`;
-- write a complete English `prompt`;
+- write a complete source-language `prompt`;
 - include image model parameters separately from the prompt.
 
 For supplied assets:
@@ -165,7 +170,7 @@ Image prompts should:
 - repeat canonical visual anchors verbatim;
 - specify environment, composition, and lighting;
 - end with concise positive cleanliness constraints;
-- remain English even when the screenplay is not English.
+- remain in the source language and use one language consistently.
 - match the source-state ledger for that exact piece.
 - omit blanket `no text` constraints when the required image must show readable source text;
   quote the exact visible text instead.
@@ -270,7 +275,7 @@ Return an array of objects with this exact shape:
         "source": "generate",
         "source_asset": null,
         "image_model": "Z-Image Turbo",
-        "prompt": "A complete English still-image generation prompt.",
+        "prompt": "一段完整、具体、自然的中文静帧生成提示词。",
         "parameters": {
           "width": 1280,
           "height": 720,
@@ -320,11 +325,14 @@ Allowed dialogue `type` values are `dialogue`, `voiceover`, `off_screen`, `singi
 - Output is parseable JSON and the root value is an array.
 - There is one object per approximately 5-10 second video piece.
 - Every object contains both the video prompt and all image inputs required for that request.
-- All model-facing prose is English.
+- Every Z-Image prompt uses the source language consistently.
+- Every MiniMax-H3 prompt uses English prose.
 - Dialogue, lyrics, and visible text remain verbatim in their source language.
 - Ref2VA images use only `reference_image` and are not treated as endpoints.
+- Ref2VA uses no more than two reference images per object; split complicated action when more
+  visual references would be required.
 - Endpoint and reference roles never coexist in one object.
-- Every generated image has a complete English prompt and parameters.
+- Every generated image has a complete source-language prompt and parameters.
 - Reused assets keep the same asset ID, anchors, prompt, parameters, and seed.
 - Every piece matches the source-state ledger and contains no future-information leakage.
 - Every named active or speaking subject resolves to a reference/subject label.

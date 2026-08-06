@@ -23,11 +23,13 @@ story / prose -> screenplay-writer -> screenplay -> storyboard-prompt -> JSON pr
 
 ## MiniMax-H3 design
 
-- **English model prompts:** image and video prompt prose is always English, regardless of the
-  screenplay language. Verbatim dialogue, lyrics, and visible text retain their source language.
+- **Split prompt languages:** Z-Image prompts use the source language and stay monolingual;
+  MiniMax-H3 prompt prose uses English. Verbatim dialogue, lyrics, and visible text retain their
+  source language.
 - **Ref2VA-first narrative workflow:** character-driven pieces normally use critical reference
   images for identity, costume, setting, style, props, expressions, or decisive compositions.
-  These images may depict any important moment and use API role `reference_image`.
+  These images may depict any important moment and use API role `reference_image`. Each piece
+  uses at most two reference images; more complex action is split into additional pieces.
 - **Endpoint modes remain available:** FL2VA, I2VA, and L2VA are used only when exact opening
   or ending frames matter.
 - **Short production units:** each JSON object represents one independent H3 request, normally
@@ -66,7 +68,7 @@ story / prose -> screenplay-writer -> screenplay -> storyboard-prompt -> JSON pr
         "source": "generate",
         "source_asset": null,
         "image_model": "Z-Image Turbo",
-        "prompt": "A complete English still-image generation prompt.",
+        "prompt": "一段完整、具体、自然的中文静帧生成提示词。",
         "parameters": {
           "width": 1280,
           "height": 720,
