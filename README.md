@@ -8,6 +8,11 @@ Prompt-authoring skills for a story-to-video workflow:
 The project generates prompts only. It does not call image or video backends, render media,
 manage ComfyUI, or run visual-QA loops.
 
+The default visual direction is **original Japanese theatrical 2D animation**: expressive
+hand-drawn linework, controlled cel shading, painted backgrounds, deliberate color scripts, and
+animation-aware motion. Prompts avoid live-action and photoreal rendering unless a user explicitly
+requests another style.
+
 ## Skills
 
 | Skill | Input | Output |
@@ -26,6 +31,9 @@ story / prose -> screenplay-writer -> screenplay -> storyboard-prompt -> JSON pr
 - **Split prompt languages:** Z-Image prompts use the source language and stay monolingual;
   MiniMax-H3 prompt prose uses English. Verbatim dialogue, lyrics, and visible text retain their
   source language.
+- **Animation-first style contract:** every image and video prompt repeats stable Japanese 2D
+  animation anchors, keeps character designs visibly illustrated, and directs key poses,
+  anticipation, follow-through, held reactions, and selective effects animation.
 - **Ref2VA-first narrative workflow:** character-driven pieces normally use critical reference
   images for identity, costume, setting, style, props, expressions, or decisive compositions.
   These images may depict any important moment and use API role `reference_image`. Each piece
@@ -105,7 +113,7 @@ NovelVideoPromptMaker/
 ## Prompt example
 
 [`examples/storyboard-prompt/xiakexing_episode_1.json`](examples/storyboard-prompt/xiakexing_episode_1.json)
-adapts the supplied first-episode excerpt of *Xiakexing* into 43 source-grounded MiniMax-H3
+adapts the supplied first-episode excerpt of *Xiakexing* into 51 source-grounded MiniMax-H3
 pieces with colocated Z-Image prompts and H3 Ref2VA prompts.
 
 ## Installation

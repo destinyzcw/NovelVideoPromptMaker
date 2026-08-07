@@ -52,6 +52,23 @@ Translate scene description, action, camera, style, reference roles, ambience, a
 English. Preserve original language only for verbatim dialogue or lyrics inside `<d>` and text
 that must visibly appear in the scene.
 
+## 3.1 Default Japanese-animation style
+
+Unless the request names another visual direction, every H3 prompt must explicitly create
+original Japanese theatrical 2D animation rather than live-action footage:
+
+- expressive hand-drawn character linework and stable facial designs;
+- controlled cel shading with consistent shadow boundaries;
+- painted period backgrounds and a deliberate scene color script;
+- readable key poses, anticipation, follow-through, held reactions, and controlled secondary
+  motion;
+- selective speed lines, smear drawings, impact frames, and exaggerated perspective only when
+  action speed requires them.
+
+Repeat the same English style anchor in every piece. Keep faces, costumes, props, and backgrounds
+visibly illustrated throughout motion, including camera moves and effects-heavy action. Do not
+name or imitate a specific artist, director, studio, franchise, or copyrighted character design.
+
 ## 4. Base-mode prompt contract
 
 ### Alignment instruction
@@ -239,7 +256,7 @@ Avoid abstract explanations of emotion. Use `N/A` when there is no score.
 ```text
 How the reference pictures align with the target video — Picture 1 (from Shot 1) aligns with the 0.00-second mark of the target video; Picture 2 (from Shot 1) aligns with the 6.00-second mark of the target video.
 
-integrated_multimodal_description: [Shot 1] Live-action cinematic wuxia fantasy, a medium shot begins in the position, character appearance, cold moonlight, black-rock cliff environment, and low-angle composition established by Picture 1. The camera pushes in with small amplitude at slow speed as the tall white-robed young man with a cold, controlled baritone (S1) walks through the crosswind toward the injured disciple on the ground. His boots grind loose gravel and the silver-trimmed robe snaps behind him. He slows, stops beside the disciple, lowers his gaze, and settles into the final spacing, contemptuous expression, body posture, and composition established by Picture 2. As he comes to a complete stop, the white-robed young man (S1) says with quiet contempt: <d>[Chinese] 一个废物，也配觊觎宗门功法？</d> His lips close after the final syllable while he continues looking down at the disciple.
+integrated_multimodal_description: [Shot 1] Original Japanese theatrical 2D anime wuxia with expressive hand-drawn linework, controlled cel shading, painted backgrounds, and a restrained cool color script. A medium shot begins in the position, character appearance, cold moonlight, black-rock cliff environment, and low-angle composition established by Picture 1. The camera pushes in with small amplitude at slow speed as the tall white-robed young man with a cold, controlled baritone (S1) walks through the crosswind toward the injured disciple on the ground. His walk resolves through readable key poses while robe hems follow through one beat later. His boots grind loose gravel and the silver-trimmed robe snaps behind him. He slows, holds a clear stopping pose, lowers his gaze, and settles into the final spacing, contemptuous expression, body posture, and composition established by Picture 2. Keep every face, costume, prop, and background visibly illustrated without live-action or photoreal drift. As he comes to a complete stop, the white-robed young man (S1) says with quiet contempt: <d>[Chinese] 一个废物，也配觊觎宗门功法？</d> His lips close after the final syllable while he continues looking down at the disciple.
 
 overall_soundscape: Strong wind moves continuously across the cliff, joined by robe fabric snapping and loose gravel rolling over black rock. Footsteps approach at an even pace and stop before the dialogue begins.
 
@@ -373,7 +390,10 @@ retention_analysis:
 <Audio 1>: reference - its restrained young male timbre and measured delivery guide <Subject 1>'s dialogue without copying the original signal.
 
 detailed_description:
-The target video uses a cinematic wuxia-fantasy style with cold moonlight, high contrast, and restrained handheld movement.
+The target video uses original Japanese theatrical 2D anime wuxia with expressive hand-drawn
+linework, controlled cel shading, painted backgrounds, cold moonlight, and a restrained cool
+color script. Motion uses readable key poses, held reactions, and clean follow-through; every
+element remains visibly illustrated without live-action or photoreal drift.
 [Shot 1] ...
 
 overall_soundscape:

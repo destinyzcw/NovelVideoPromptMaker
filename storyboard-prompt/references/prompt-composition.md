@@ -18,7 +18,9 @@ Build each prompt in this order of priority, highest first:
 1. **Shot content (画面描述)** — the subject, action, expression, composition of *this* shot.
    This is non-negotiable; it defines the picture.
 2. **Art style (画风)** — medium, palette, rendering, overall mood/texture. Inherited from the
-   project, applied to every shot.
+   project, applied to every shot. The project default is original Japanese theatrical 2D
+   animation: expressive hand-drawn linework, controlled cel shading, painted backgrounds, and a
+   deliberate color script.
 3. **Shot grammar** — translate 景别/机位/运镜 into visual language: 特写 → tight framing on the
    face; 俯视 → high angle looking down; 慢推 → implied inward focus / shallow depth.
 4. **Environment & lighting** — time of day, weather, key light direction, atmosphere consistent
@@ -95,16 +97,19 @@ Use Image 1 only for visual style; do not copy its objects or composition. A clo
 Lin Yue as his wary gaze turns to shock, his brow tightening before his eyes widen. Image 2
 defines Lin Yue's appearance; remove its pure-white background and integrate him naturally into
 the rainy hall. Warm amber light falls from the upper side while the background remains soft.
-Keep Image 1's film grain and low-saturation warm-cool contrast.
+Keep Image 1's expressive line weight, cel-shadow design, painted texture, and low-saturation
+warm-cool color script.
 ```
 
 ### No reference-image support (features transcribed)
 
 ```text
-Cinematic film texture with grain and low-saturation warm-cool contrast. A close-up frames Lin
+Original Japanese theatrical 2D animation with expressive hand-drawn linework, controlled cel
+shading, painted backgrounds, and a low-saturation warm-cool color script. A close-up frames Lin
 Yue, a thirty-year-old man with short cropped hair, straight brows, an old chin scar, and a dark
 trench coat. His wary gaze turns to shock as warm amber light falls from the upper side in a
-rainy hall; the background remains soft.
+rainy hall; the background is simplified into soft painted shapes. Keep every element visibly
+illustrated, without live-action or photoreal texture.
 ```
 
 ### First / last frame pair (for video)

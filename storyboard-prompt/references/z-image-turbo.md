@@ -13,6 +13,7 @@ specifically. Read this whenever you generate 分镜图 prompts intended for Z-I
 6. Worked examples (Chinese-source storyboard shots)
 7. MiniMax-H3 reference and endpoint images
 8. Scene complexity — budget, split, and bind
+9. Default Japanese-animation rendering contract
 
 ## 1. What makes Z-Image Turbo different
 
@@ -57,7 +58,7 @@ for clean storyboard frames:
 
 - `Clean frame without text, watermark, or logo.`
 - `Only the described characters are present; the background remains uncluttered.`
-- `Anatomically correct hands and limbs with the correct number of fingers.`
+- `Hands and limbs use clean, intentional anime construction with the correct number of fingers.`
 - `Sharp focus without motion blur.` (unless motion blur is wanted)
 
 Only add the constraints that matter for the shot — don't paste a boilerplate wall every time.
@@ -98,8 +99,10 @@ the sibling `parameters` object; never append sampler settings to the prompt tex
 电影感特写画面，一名身形清瘦的十六岁弟子占据画面中心。他束着短发，身穿粗布
 入门弟子袍，左眉上方有一道细疤，嘴角带血，雨水与尘土划过面庞，神情由倔强转为
 坚定。发白的指节紧握一枚巴掌大小、边缘焦黑破损并带有暗金云纹的玉简。冷月光从
-背后勾勒人物轮廓，夜色悬崖与雾气在浅景深中虚化。写实中国水墨质感，冷色电影
-调色，细腻胶片颗粒。画面干净，不出现文字、水印或多余人物。
+背后勾勒人物轮廓，夜色悬崖与雾气简化为前中后景分明的手绘色块。日式二维剧场版
+武侠动画风格，清晰富有表现力的手绘线条，克制的赛璐璐分层上色，冷色调色，细腻
+手绘背景。所有人物保持二维动画造型，不呈现真人摄影质感；画面干净，不出现文字、
+水印或多余人物。
 ```
 Parameters: `{"steps": 9, "cfg": 0, "width": 1024, "height": 1024, "seed": 2301}`
 
@@ -109,8 +112,10 @@ Parameters: `{"steps": 9, "cfg": 0, "width": 1024, "height": 1024, "seed": 2301}
 夜晚俯视远景，陡峭的黑色岩崖占据画面，崖边只有一棵枯树，下方是深不见底的寒雾。
 狂风卷着冰冷暴雨横扫两个人物：束短发、穿粗布袍、左眉有细疤的清瘦少年弟子在
 悬崖边踉跄；一名白袍青年双手负于身后，以轻蔑目光步步逼近。两人在宏大险峻的
-山崖景观中保持较小比例。写实中国水墨质感，冷色调，高反差夜景照明，体积雾与
-电影化构图。画面干净，不出现文字、水印或杂乱背景元素。
+山崖景观中保持较小比例。日式二维剧场版武侠动画风格，清晰手绘线条，克制的
+赛璐璐分层上色，冷色调，高反差动画夜景照明，分层绘制的雾气与剧场版构图。所有
+人物保持二维动画造型，不呈现真人摄影质感；画面干净，不出现文字、水印或杂乱
+背景元素。
 ```
 Parameters: `{"steps": 10, "cfg": 0, "width": 1280, "height": 720, "seed": 2302}`
 
@@ -150,28 +155,32 @@ H3's minimum output duration is 4 seconds and its official FL2VA guide favors on
 K0 / Picture 1 — just before the kick:
 
 ```text
-A cinematic medium-close side view at eye level shows a tall white-robed young man with tied hair,
-sharp eyes, and a silver-trimmed sect robe raising one leg with a cold smile, just before his boot
+A Japanese theatrical 2D anime medium-close side view at eye level shows a tall white-robed young
+man with tied hair, sharp eyes, and a silver-trimmed sect robe raising one leg with a cold smile,
+just before his boot
 touches a staggering lean sixteen-year-old disciple with short tied hair, a coarse novice robe,
 and a thin scar over his left eyebrow. They stand on a steep black-rock cliff with one dead tree
 at the edge and bottomless cold fog below; gravel loosens beneath their feet. Cool moonlight rims
-both figures as volumetric fog cuts through the deep-blue night. Realistic Chinese ink-wash
-treatment, cool palette, high contrast, cinematic composition. Clean frame without text,
-watermark, or extra people; anatomically correct hands and limbs.
+both figures as layered painted fog cuts through the deep-blue night. Expressive hand-drawn
+linework, controlled cel shading, a cool color script, and a painted wuxia background. Keep every
+element visibly illustrated without live-action or photoreal texture. Clean frame without text,
+watermark, or extra people; hands and limbs use clean anime construction.
 ```
 Parameters: `{"steps": 10, "cfg": 0, "width": 1280, "height": 720, "seed": 4477}`
 
 K1 / Picture 2 — the disciple falling beyond the cliff edge:
 
 ```text
-A cinematic high-angle wide shot looks beyond the cliff edge. A tall white-robed young man with
-tied hair and a silver-trimmed sect robe stands at the rim after retracting his kick. Below him,
+A Japanese theatrical 2D anime high-angle wide shot looks beyond the cliff edge. A tall white-robed
+young man with tied hair and a silver-trimmed sect robe stands at the rim after retracting his kick.
+Below him,
 a lean sixteen-year-old disciple with short tied hair, a coarse novice robe, and a thin scar over
 his left eyebrow clutches the damaged jade slip while falling into open air and rotating off
 balance. Loose stones tumble into bottomless cold fog beside the steep black-rock cliff and its
 single dead tree. Cool rim moonlight and rising volumetric fog shape the deep-blue night.
-Realistic Chinese ink-wash treatment, cool palette, high contrast, cinematic composition.
-Clean frame without text, watermark, or extra people; anatomically correct limbs.
+Expressive hand-drawn linework, controlled cel shading, a cool color script, and a painted wuxia
+background. Keep every element visibly illustrated without live-action or photoreal texture.
+Clean frame without text, watermark, or extra people; limbs use clean anime construction.
 ```
 Parameters: `{"steps": 10, "cfg": 0, "width": 1280, "height": 720, "seed": 4477}`
 
@@ -232,3 +241,28 @@ Grouping + 左/右/前景/背景 + per-subject actions is what stops the model f
 ComfyUI compositing approach — **regional prompting / attention-couple** (bind each subject to a
 mask/region), or **generate a base then inpaint** subjects one at a time. Heavier to set up; the
 project default stays split-and-anchor.
+
+## 9. Default Japanese-animation rendering contract
+
+Unless another style is explicitly requested, repeat one invariant source-language anchor in
+every image prompt. For Chinese-source material, use:
+
+```text
+日式二维剧场版动画风格，清晰富有表现力的手绘线条，克制的赛璐璐分层上色，细腻手绘背景与统一色彩脚本。
+```
+
+Adapt the genre noun when useful (`武侠动画`, `科幻动画`, `校园动画`) without changing the
+rendering terms. Then describe the shot-specific palette, line weight, shadow design, painted
+background, and effects. Keep character faces, silhouettes, clothing patterns, and cel-shadow
+boundaries consistent across reused assets.
+
+Use animation-native visual language:
+
+- `清晰关键姿势` for readable action staging;
+- `短暂蓄力姿势` and `动作后的跟随与缓冲` for anticipation and follow-through;
+- `速度线、拖影线稿、冲击帧` only for a shot that requires extreme speed or impact;
+- `分层手绘雾气、火焰、水花或尘土` for effects animation;
+- `所有元素保持二维手绘动画造型，不呈现真人摄影或照片写实质感` as the final style guard.
+
+Do not ask Z-Image to imitate a named studio, franchise, artist, or director. Describe the
+observable rendering traits instead.

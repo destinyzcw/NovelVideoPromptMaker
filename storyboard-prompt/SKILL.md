@@ -70,6 +70,24 @@ separate bible object; copy the needed continuity information into each video pi
 Never leak a later discovery, injury, costume state, prop, inscription, or character arrival into
 an earlier image or video prompt.
 
+## Default visual direction
+
+Unless the user explicitly requests another look, generate **original Japanese theatrical 2D
+animation**, not live-action or photoreal footage.
+
+- Use clean, expressive hand-drawn linework, controlled cel shading, painted backgrounds, a
+  deliberate color script, and selective effects animation.
+- Preserve the source genre and period through costume, architecture, props, and action design,
+  while rendering them as animation rather than photographed reality.
+- Keep character silhouettes, facial designs, line weight, palette, and cel-shadow boundaries
+  stable across every reference and video piece.
+- Describe motion with readable key poses, anticipation, follow-through, and held reactions.
+  Reserve smear drawings, speed lines, impact frames, and exaggerated perspective for fast action.
+- Keep the result original. Do not name or imitate a living artist, director, studio, franchise,
+  or copyrighted character design.
+- State the animation style positively and explicitly in every Z-Image prompt and H3 video
+  prompt. Do not rely on a negative prompt or on a single project-level declaration.
+
 ## Pass 1 - Split into 5-10 second video pieces
 
 Each JSON object represents one H3 generation request.
@@ -170,6 +188,8 @@ Image prompts should:
 - repeat canonical visual anchors verbatim;
 - specify environment, composition, and lighting;
 - end with concise positive cleanliness constraints;
+- explicitly render every person, prop, and environment as a Japanese 2D animation drawing,
+  with no photographic skin, live actors, lens bokeh, or photoreal texture;
 - remain in the source language and use one language consistently.
 - match the source-state ledger for that exact piece.
 - omit blanket `no text` constraints when the required image must show readable source text;
@@ -229,6 +249,13 @@ Write `detailed_description` as concrete playback-order direction, normally 300-
 depending on dialogue density. Establish the opening composition, subject positions, lighting,
 camera motion, intermediate actions and reactions, and synchronized physical sounds. Keep the
 complete H3 prompt below the API limit of 7000 characters.
+
+For the default Japanese-animation direction, establish the illustrated look before `[Shot 1]`.
+Describe animation timing as observable movement rather than production jargon alone: readable
+key poses, brief held reactions, controlled secondary motion, and clean follow-through. Fast
+action may use one or two purposeful smear drawings, speed lines, or an impact frame, but faces,
+costumes, props, and backgrounds must remain visibly illustrated and must not drift toward
+live-action or photoreal rendering.
 
 ### Speech and sound
 
@@ -327,6 +354,8 @@ Allowed dialogue `type` values are `dialogue`, `voiceover`, `off_screen`, `singi
 - Every object contains both the video prompt and all image inputs required for that request.
 - Every Z-Image prompt uses the source language consistently.
 - Every MiniMax-H3 prompt uses English prose.
+- Every image and video prompt repeats the same original Japanese 2D animation style anchors and
+  contains no live-action, photoreal, named-studio, or named-artist direction.
 - Dialogue, lyrics, and visible text remain verbatim in their source language.
 - Ref2VA images use only `reference_image` and are not treated as endpoints.
 - Ref2VA uses no more than two reference images per object; split complicated action when more
